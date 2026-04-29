@@ -41,8 +41,8 @@ function routeRefeicoes(string $method, ?int $id, ?string $sub, ?int $subId, arr
 
     // Recurso principal: /refeicoes[/{id}]
     match($method) {
-        'GET'    => $id ? getRefeicao($db, $id) : listRefeicoes($db),
-        'POST'   => createRefeicao($db, $body),
+        'GET'    => $id ? getRefeicao($db, $id) : listRefeicoes($db, $user['id']),
+        'POST'   => createRefeicao($db, $body, $user['id']),
         'PUT'    => $id ? updateRefeicao($db, $id, $body) : jsonError('ID obrigatório', 400),
         'DELETE' => $id ? deleteRefeicao($db, $id)        : jsonError('ID obrigatório', 400),
         default  => jsonError('Método não permitido', 405),
@@ -54,11 +54,11 @@ function routeRefeicoes(string $method, ?int $id, ?string $sub, ?int $subId, arr
  * Para cada refeição, busca também seus itens (alimentos).
  * Retorna os totais calóricos somados do dia inteiro.
  */
-function listRefeicoes(PDO $db): void {
-    $uid  = (int)($_GET['usuario_id'] ?? 1);
-    $data = $_GET['data'] ?? date('Y-m-d'); // padrão: hoje
+function listRefeicoes(PDO $db, int $uidAutenticado): void {
+    // Usa sempre o ID do usuário autenticado — ignora qualquer usuario_id da query string
+    $uid  = $uidAutenticado;
+    $data = $_GET['data'] ?? date('Y-m-d');
 
-    // Busca refeições do dia com contagem de itens em cada uma
     $stmt = $db->prepare("
         SELECT r.*, COUNT(ri.id) AS num_itens
         FROM refeicoes r
@@ -69,7 +69,6 @@ function listRefeicoes(PDO $db): void {
     $stmt->execute([$uid, $data]);
     $refeicoes = $stmt->fetchAll();
 
-    // Para cada refeição, busca seus alimentos com nome e emoji
     foreach ($refeicoes as &$r) {
         $si = $db->prepare("
             SELECT ri.*, a.nome, a.emoji, a.categoria
@@ -81,7 +80,6 @@ function listRefeicoes(PDO $db): void {
         $r['itens'] = $si->fetchAll();
     }
 
-    // Soma os macros de todas as refeições do dia
     $tot = $db->prepare("
         SELECT COALESCE(SUM(kcal_total),0) AS kcal,
                COALESCE(SUM(proteina_g),0) AS prot,
@@ -119,28 +117,30 @@ function getRefeicao(PDO $db, int $id): void {
  * Se o body incluir um array 'itens', os alimentos são inseridos automaticamente
  * e os totais são calculados logo em seguida.
  */
-function createRefeicao(PDO $db, array $body): void {
-    requireFields($body, ['usuario_id', 'tipo', 'data_ref']);
+function createRefeicao(PDO $db, array $body, int $uidAutenticado): void {
+    requireFields($body, ['tipo', 'data_ref']);
+
+    // Usa sempre o ID do usuário autenticado
+    $body['usuario_id'] = $uidAutenticado;
 
     $stmt = $db->prepare("
         INSERT INTO refeicoes (usuario_id, tipo, nome_custom, data_ref, hora_ref, obs)
-        VALUES (:uid,:tipo,:nome,:data,:hora,:obs)
+        VALUES (?,?,?,?,?,?)
     ");
     $stmt->execute([
-        ':uid'  => $body['usuario_id'],
-        ':tipo' => $body['tipo'],
-        ':nome' => $body['nome_custom'] ?? null,
-        ':data' => $body['data_ref'],
-        ':hora' => $body['hora_ref']    ?? date('H:i:s'),
-        ':obs'  => $body['obs']         ?? null,
+        $uidAutenticado,
+        $body['tipo'],
+        $body['nome_custom'] ?? null,
+        $body['data_ref'],
+        $body['hora_ref']    ?? date('H:i:s'),
+        $body['obs']         ?? null,
     ]);
     $refId = (int)$db->lastInsertId();
 
-    // Se vieram itens, insere e recalcula totais
     if (!empty($body['itens']) && is_array($body['itens'])) {
         foreach ($body['itens'] as $item) _insertItem($db, $refId, $item);
         recalcRefeicao($db, $refId);
-        recalcHistorico($db, (int)$body['usuario_id'], $body['data_ref']);
+        recalcHistorico($db, $uidAutenticado, $body['data_ref']);
     }
 
     jsonResponse(['id' => $refId, 'message' => 'Refeição criada'], 201);
@@ -200,13 +200,19 @@ function addItem(PDO $db, int $refId, array $body): void {
  * proporcionalmente à quantidade informada.
  */
 function _insertItem(PDO $db, int $refId, array $item): void {
+    if (empty($item['alimento_id']) || empty($item['quantidade_g'])) {
+        jsonError('alimento_id e quantidade_g são obrigatórios para cada item', 422);
+    }
+
     $a = $db->prepare("SELECT * FROM alimentos WHERE id=? AND ativo=1");
     $a->execute([$item['alimento_id']]);
     $al = $a->fetch();
-    if (!$al) return; // ignora alimentos inexistentes ou inativos
+
+    if (!$al) {
+        jsonError("Alimento ID {$item['alimento_id']} não encontrado ou inativo.", 404);
+    }
 
     $macros = calcMacros($al, (float)$item['quantidade_g']);
-
     $db->prepare("
         INSERT INTO refeicao_itens (refeicao_id,alimento_id,quantidade_g,kcal,proteina_g,carb_g,gordura_g)
         VALUES (?,?,?,?,?,?,?)

@@ -1,15 +1,14 @@
-# Ignora configurações locais do servidor
-.htaccess
-
-# Ignora arquivos de sistema
-.DS_Store
-Thumbs.db
-
-# Ignora logs
-*.log
-
 # Variáveis de ambiente — nunca enviar para o GitHub
 .env.local
 .env
 
+# Logs
+*.log
 email_debug.log
+
+# Arquivo de teste
+api/teste.php
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

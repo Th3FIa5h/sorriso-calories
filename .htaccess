@@ -1,0 +1,5 @@
+RewriteEngine On
+
+# Passa o cabeçalho Authorization para o PHP em todos os níveis
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]

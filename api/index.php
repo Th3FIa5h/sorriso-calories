@@ -99,15 +99,15 @@ try {
             routeHistorico();
             break;
 
-        case '':
-            jsonResponse(['status' => 'ok', 'version' => '2.0', 'app' => 'Sorriso Calories API']);
-            break;
-
         case 'deletar-conta':
             require_once __DIR__ . '/routes/auth.php';
             require_once __DIR__ . '/routes/usuarios.php';
             $user = autenticar();
             deleteUsuario(Database::connect(), $user['id']);
+            break;
+
+        case '':
+            jsonResponse(['status' => 'ok', 'version' => '2.0', 'app' => 'Sorriso Calories API']);
             break;
 
         default:

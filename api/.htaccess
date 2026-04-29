@@ -1,0 +1,11 @@
+Options +FollowSymLinks -MultiViews
+RewriteEngine On
+
+# Passa o Authorization para o PHP
+RewriteCond %{HTTP:Authorization} .+
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Redireciona para index.php mantendo query string
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
