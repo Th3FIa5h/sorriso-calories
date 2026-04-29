@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificar Email — Sorriso Calories</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center;
+         min-height:100vh; background:var(--gray100); width:100% }
+  .card-center { background:var(--white); border-radius:24px;
+                 box-shadow:0 8px 48px rgba(44,106,79,.13);
+                 padding:52px 56px; width:460px; text-align:center }
+  .big-emoji { font-size:64px; margin-bottom:16px; display:block }
+  .card-title { font-family:var(--fd); font-size:26px; font-weight:400;
+                color:var(--gray800); margin-bottom:10px }
+  .card-msg { font-size:15px; color:var(--gray600); line-height:1.6; margin-bottom:28px }
+</style>
+</head>
+<body>
+<div class="card-center">
+  <span class="big-emoji" id="emoji">⏳</span>
+  <h2 class="card-title" id="title">Verificando seu email...</h2>
+  <p class="card-msg" id="msg">Aguarde um momento.</p>
+  <div id="actions"></div>
+</div>
+
+<script>
+  const BASE = '/sorriso-calories/api';
+
+  async function verificar() {
+    // Pega o token da URL (?token=abc123...)
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+
+    if (!token) {
+      document.getElementById('emoji').textContent = '❌';
+      document.getElementById('title').textContent = 'Link inválido';
+      document.getElementById('msg').textContent   = 'Este link de verificação não é válido.';
+      document.getElementById('actions').innerHTML =
+        '<a href="login.html" class="btn" style="display:inline-flex">Ir para o login</a>';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE}/auth/verificar-email`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ token }),
+      });
+      const d = await res.json();
+
+      if (res.ok) {
+        // Sucesso
+        document.getElementById('emoji').textContent = '✅';
+        document.getElementById('title').textContent = 'Email confirmado!';
+        document.getElementById('msg').textContent   = 'Sua conta foi ativada com sucesso. Você já pode fazer login.';
+        document.getElementById('actions').innerHTML =
+          '<a href="login.html" class="btn" style="display:inline-flex">Fazer login agora</a>';
+      } else {
+        // Token inválido ou expirado
+        document.getElementById('emoji').textContent = '⚠️';
+        document.getElementById('title').textContent = 'Link expirado';
+        document.getElementById('msg').textContent   = d.error || 'Este link de verificação expirou ou já foi usado.';
+        document.getElementById('actions').innerHTML =
+          '<a href="login.html" class="btn-o" style="display:inline-flex">Voltar ao login</a>';
+      }
+    } catch(e) {
+      document.getElementById('emoji').textContent = '❌';
+      document.getElementById('title').textContent = 'Erro de conexão';
+      document.getElementById('msg').textContent   = 'Não foi possível verificar seu email. Tente novamente.';
+    }
+  }
+
+  verificar();
+</script>
+</body>
+</html>

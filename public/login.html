@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica o tema salvo antes de renderizar a página (evita flash)
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Sorriso Calories</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  /* Centraliza o card na tela inteira */
+  body { display:flex; align-items:center; justify-content:center;
+         min-height:100vh; background:var(--gray100); width:100% }
+
+  .auth-card { background:var(--white); border-radius:24px;
+               box-shadow:0 8px 48px rgba(44,106,79,.13);
+               padding:52px 56px; width:480px }
+
+  .auth-logo { text-align:center; margin-bottom:36px }
+  .auth-logo h1 { font-family:var(--fd); font-size:32px;
+                  font-weight:500; color:var(--g700); line-height:1.2 }
+  .auth-logo p  { font-size:13px; color:var(--gray400);
+                  text-transform:uppercase; letter-spacing:.08em; margin-top:4px }
+
+  .auth-title { font-family:var(--fd); font-size:22px; font-weight:400;
+                color:var(--gray800); margin-bottom:6px }
+  .auth-sub   { font-size:14px; color:var(--gray400); margin-bottom:28px }
+
+  /* Campo de senha com botão de mostrar/esconder */
+  .pw-wrap { position:relative }
+  .pw-wrap .inp { padding-right:44px }
+  .pw-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%);
+               background:none; border:none; cursor:pointer; color:var(--gray400);
+               padding:4px; transition:color .18s }
+  .pw-toggle:hover { color:var(--g700) }
+
+  .auth-btn { width:100%; justify-content:center; padding:14px;
+              font-size:15px; margin-top:8px }
+
+  .auth-link { text-align:center; margin-top:20px; font-size:14px; color:var(--gray400) }
+  .auth-link a { color:var(--g700); font-weight:500; text-decoration:none }
+  .auth-link a:hover { text-decoration:underline }
+
+  /* Mensagem de erro inline */
+  .auth-err { background:#fde8e8; color:#c0392b; border-radius:var(--rs);
+              padding:12px 16px; font-size:13px; margin-bottom:16px; display:none }
+  .auth-err.show { display:block }
+</style>
+</head>
+<body>
+<div class="auth-card">
+
+  <!-- Logo -->
+  <div class="auth-logo">
+    <div style="font-size:48px;margin-bottom:8px">🥗</div>
+    <h1>Sorriso<br>Calories</h1>
+    <p>Nutrição inteligente</p>
+  </div>
+
+  <h2 class="auth-title">Bem-vindo de volta</h2>
+  <p class="auth-sub">Entre com sua conta para continuar</p>
+
+  <!-- Mensagem de erro -->
+  <div class="auth-err" id="err"></div>
+
+  <!-- Formulário -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <div class="fg">
+      <label class="lbl">E-mail</label>
+      <input class="inp" id="email" type="email"
+             placeholder="seu@email.com" autocomplete="email">
+    </div>
+
+    <div class="fg">
+      <label class="lbl">Senha</label>
+      <div class="pw-wrap">
+        <input class="inp" id="senha" type="password"
+               placeholder="Sua senha" autocomplete="current-password">
+        <!-- Botão para mostrar/esconder senha -->
+        <button class="pw-toggle" type="button" onclick="toggleSenha('senha', this)"
+                title="Mostrar senha">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <!-- Link de esqueci minha senha -->
+      <div style="text-align:right;margin-top:6px">
+        <a href="esqueci-senha.html"
+           style="font-size:13px;color:var(--g700);text-decoration:none">
+          Esqueci minha senha
+        </a>
+      </div>
+    </div>
+
+    <button class="btn auth-btn" id="btn-login" onclick="login()">
+      Entrar
+    </button>
+  </div>
+
+  <div class="auth-link">
+    Não tem conta? <a href="cadastro.html">Cadastre-se</a>
+  </div>
+</div>
+
+<script>
+  const BASE = '/sorriso-calories/api';
+
+  // Se já tem token válido salvo, vai direto para o dashboard
+  const token = localStorage.getItem('sc_token');
+  if (token) location.href = 'index.html';
+
+  // Permite submeter o formulário pressionando Enter
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  // Mostra ou esconde a senha no campo
+  function toggleSenha(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    // Troca o ícone entre olho aberto e fechado
+    btn.innerHTML = isPassword
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
+                    a18.45 18.45 0 0 1 5.06-5.94"/>
+           <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8
+                    a18.5 18.5 0 0 1-2.16 3.19"/>
+           <line x1="1" y1="1" x2="23" y2="23"/>
+         </svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+           <circle cx="12" cy="12" r="3"/>
+         </svg>`;
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('err');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const senha = document.getElementById('senha').value;
+
+    // Validação básica no frontend
+    if (!email || !senha) {
+      showErr('Preencha o e-mail e a senha.');
+      return;
+    }
+
+    const btn = document.getElementById('btn-login');
+    btn.textContent = 'Entrando...';
+    btn.disabled    = true;
+
+    try {
+      const res = await fetch(`${BASE}/auth/login`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, senha }),
+      });
+      const d = await res.json();
+
+      if (!res.ok) {
+        showErr(d.error || 'Erro ao fazer login.');
+        return;
+      }
+
+      // Salva o token e o ID do usuário no localStorage
+      localStorage.setItem('sc_token', String(d.token));
+      localStorage.setItem('sc_uid',   String(d.usuario.id));
+
+      // Confirma que foi salvo antes de redirecionar
+      const tokenSalvo = localStorage.getItem('sc_token');
+      const uidSalvo   = localStorage.getItem('sc_uid');
+      console.log('Antes de redirecionar — token:', tokenSalvo, '| uid:', uidSalvo);
+
+      if (tokenSalvo && uidSalvo) {
+        location.href = 'index.html';
+      } else {
+        showErr('Erro ao salvar sessão. Tente novamente.');
+      }
+
+    } catch(e) {
+      showErr('Erro de conexão. Verifique se o servidor está rodando.');
+    } finally {
+      btn.textContent = 'Entrar';
+      btn.disabled    = false;
+    }
+  }
+</script>
+<!-- Botão de tema no canto superior direito -->
+<button onclick="toggleTema()"
+  style="position:fixed;top:20px;right:20px;background:var(--white);
+         border:1.5px solid var(--gray200);border-radius:99px;
+         padding:8px 16px;font-family:var(--fb);font-size:13px;
+         color:var(--gray600);cursor:pointer;transition:all .18s;
+         display:flex;align-items:center;gap:8px;box-shadow:var(--sh)"
+  id="tema-btn">
+  🌙 Tema escuro
+</button>
+
+<script>
+  // Aplica o tema salvo ao carregar
+  function aplicarTema() {
+    const tema = localStorage.getItem('sc_tema') || 'light';
+    if (tema === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('tema-btn').textContent = '☀️ Tema claro';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('tema-btn').textContent = '🌙 Tema escuro';
+    }
+  }
+
+  function toggleTema() {
+    const atual = localStorage.getItem('sc_tema') || 'light';
+    const novo  = atual === 'light' ? 'dark' : 'light';
+    localStorage.setItem('sc_tema', novo);
+    aplicarTema();
+  }
+
+  aplicarTema();
+</script>
+</body>
+</html>

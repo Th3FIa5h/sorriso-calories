@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esqueci minha senha — Sorriso Calories</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center;
+         min-height:100vh; background:var(--gray100); width:100% }
+  .auth-card  { background:var(--white); border-radius:24px;
+                box-shadow:0 8px 48px rgba(44,106,79,.13);
+                padding:52px 56px; width:460px }
+  .auth-logo  { text-align:center; margin-bottom:32px }
+  .auth-logo h1 { font-family:var(--fd); font-size:28px;
+                  font-weight:500; color:var(--g700); line-height:1.2 }
+  .auth-title { font-family:var(--fd); font-size:22px; font-weight:400;
+                color:var(--gray800); margin-bottom:6px }
+  .auth-sub   { font-size:14px; color:var(--gray400); margin-bottom:28px }
+  .auth-err   { background:#fde8e8; color:#c0392b; border-radius:var(--rs);
+                padding:12px 16px; font-size:13px; margin-bottom:16px; display:none }
+  .auth-err.show { display:block }
+  .auth-ok    { background:var(--g50); color:var(--g700); border-radius:var(--rs);
+                padding:16px; font-size:14px; margin-bottom:16px;
+                line-height:1.6; display:none }
+  .auth-ok.show { display:block }
+</style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-logo">
+    <div style="font-size:40px;margin-bottom:8px">🔐</div>
+    <h1>Sorriso Calories</h1>
+  </div>
+
+  <h2 class="auth-title">Esqueceu a senha?</h2>
+  <p class="auth-sub">
+    Digite seu email e enviaremos um link para você criar uma nova senha.
+  </p>
+
+  <div class="auth-err" id="err"></div>
+  <div class="auth-ok"  id="ok"></div>
+
+  <div id="form-area" style="display:flex;flex-direction:column;gap:16px">
+    <div class="fg">
+      <label class="lbl">E-mail</label>
+      <input class="inp" id="email" type="email" placeholder="seu@email.com">
+    </div>
+    <button class="btn" id="btn"
+            style="width:100%;justify-content:center;padding:14px;font-size:15px"
+            onclick="enviar()">
+      Enviar link de recuperação
+    </button>
+  </div>
+
+  <div class="auth-link" style="text-align:center;margin-top:20px;
+       font-size:14px;color:var(--gray400)">
+    Lembrou a senha?
+    <a href="login.html" style="color:var(--g700);font-weight:500;text-decoration:none">
+      Voltar ao login
+    </a>
+  </div>
+</div>
+
+<script>
+  const BASE = '/sorriso-calories/api';
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') enviar();
+  });
+
+  async function enviar() {
+    const email = document.getElementById('email').value.trim();
+    const err   = document.getElementById('err');
+    const ok    = document.getElementById('ok');
+
+    err.classList.remove('show');
+    ok.classList.remove('show');
+
+    if (!email) {
+      err.textContent = 'Digite seu email.';
+      err.classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('btn');
+    btn.textContent = 'Enviando...';
+    btn.disabled    = true;
+      
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      err.textContent = 'Digite seu email.';
+      err.classList.add('show');
+      return;
+    }
+    if (!emailRegex.test(email)) {
+      err.textContent = 'Email inválido. Use um formato como: nome@exemplo.com';
+      err.classList.add('show');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE}/auth/esqueci-senha`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email }),
+      });
+      const d = await res.json();
+
+      // Sempre mostra sucesso (mesmo se email não existir — segurança)
+      ok.innerHTML = `
+        ✅ Se este email estiver cadastrado, você receberá um link em breve.<br><br>
+        <strong>Verifique sua caixa de entrada</strong> e também a pasta de spam.
+        O link expira em 1 hora.
+      `;
+      ok.classList.add('show');
+      document.getElementById('form-area').style.display = 'none';
+
+    } catch(e) {
+      err.textContent = 'Erro de conexão. Tente novamente.';
+      err.classList.add('show');
+      btn.textContent = 'Enviar link de recuperação';
+      btn.disabled    = false;
+    }
+  }
+</script>
+<!-- Botão de tema no canto superior direito -->
+<button onclick="toggleTema()"
+  style="position:fixed;top:20px;right:20px;background:var(--white);
+         border:1.5px solid var(--gray200);border-radius:99px;
+         padding:8px 16px;font-family:var(--fb);font-size:13px;
+         color:var(--gray600);cursor:pointer;transition:all .18s;
+         display:flex;align-items:center;gap:8px;box-shadow:var(--sh)"
+  id="tema-btn">
+  🌙 Tema escuro
+</button>
+
+<script>
+  // Aplica o tema salvo ao carregar
+  function aplicarTema() {
+    const tema = localStorage.getItem('sc_tema') || 'light';
+    if (tema === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('tema-btn').textContent = '☀️ Tema claro';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('tema-btn').textContent = '🌙 Tema escuro';
+    }
+  }
+
+  function toggleTema() {
+    const atual = localStorage.getItem('sc_tema') || 'light';
+    const novo  = atual === 'light' ? 'dark' : 'light';
+    localStorage.setItem('sc_tema', novo);
+    aplicarTema();
+  }
+
+  aplicarTema();
+</script>
+</body>
+</html>

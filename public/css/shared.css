@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Playfair+Display:wght@400;500&display=swap');
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+
+:root {
+  --g900:#1a3a2a; --g700:#2d6a4f; --g500:#52b788;
+  --g300:#95d5b2; --g100:#d8f3dc; --g50:#f0faf3;
+  --white:#fff;
+  --gray100:#f5f7f5; --gray200:#e8ede9; --gray400:#9aab9c;
+  --gray600:#5a6b5c; --gray800:#2e3a2f;
+  --fd:'Playfair Display',Georgia,serif;
+  --fb:'DM Sans',sans-serif;
+  --r:16px; --rs:8px;
+  --sh:0 2px 16px rgba(44,106,79,.08);
+  --shm:0 4px 32px rgba(44,106,79,.14);
+}
+
+/* Remove largura fixa — agora ocupa 100% da tela */
+html, body {
+  width:100%;
+  height:100%;
+  background:var(--gray100);
+  font-family:var(--fb);
+  color:var(--gray800);
+  overflow-x:hidden;
+}
+
+/* ── Layout ── */
+.wrap { display:flex; width:100%; height:100vh; overflow:hidden }
+.main { flex:1; display:flex; flex-direction:column; min-width:0; overflow-y:auto; overflow-x:hidden }
+.ph    { padding:32px 40px 0; display:flex; align-items:flex-start;
+         justify-content:space-between; flex-shrink:0; flex-wrap:wrap; gap:12px }
+.ph h2 { font-family:var(--fd); font-size:26px; font-weight:400; color:var(--gray800) }
+.ph p  { font-size:14px; color:var(--gray400); margin-top:4px }
+.ca    { padding:24px 40px 48px; flex:1 }
+
+/* ── Sidebar ── */
+.sidebar {
+  width:240px;
+  height:100vh;
+  flex-shrink:0;
+  background:var(--white);
+  border-right:1px solid var(--gray200);
+  display:flex;
+  flex-direction:column;
+  padding:32px 0 24px;
+  position:sticky;
+  top:0;
+  overflow-y:auto;
+}
+.sb-logo   { padding:0 24px 32px; border-bottom:1px solid var(--gray200); margin-bottom:24px }
+.sb-logo h1{ font-family:var(--fd); font-size:18px; font-weight:500; color:var(--g700); line-height:1.2 }
+.sb-logo p { font-size:11px; color:var(--gray400); letter-spacing:.06em; text-transform:uppercase; margin-top:2px }
+.sb-nav    { flex:1; padding:0 12px; display:flex; flex-direction:column; gap:2px }
+.sb-item   { display:flex; align-items:center; gap:10px; padding:10px 14px;
+             border-radius:var(--rs); color:var(--gray600); font-size:13px; font-weight:400;
+             cursor:pointer; transition:all .18s; border:none; background:transparent;
+             text-align:left; width:100%; text-decoration:none }
+.sb-item:hover { background:var(--g50); color:var(--g700) }
+.sb-item.on    { background:var(--g100); color:var(--g700); font-weight:600 }
+.sb-item svg   { width:16px; height:16px; opacity:.7; flex-shrink:0 }
+.sb-item.on svg{ opacity:1 }
+.sb-foot  { padding:20px 24px 0; border-top:1px solid var(--gray200); margin-top:auto }
+.sb-user  { display:flex; align-items:center; gap:10px; cursor:pointer; text-decoration:none }
+.u-av     { width:32px; height:32px; border-radius:50%; background:var(--g300);
+            display:flex; align-items:center; justify-content:center;
+            font-size:12px; font-weight:600; color:var(--g900); flex-shrink:0 }
+.u-av+div p    { font-size:13px; font-weight:500; color:var(--gray800) }
+.u-av+div span { font-size:11px; color:var(--gray400) }
+
+/* ── Cards ── */
+.card { background:var(--white); border-radius:var(--r); box-shadow:var(--sh); padding:24px 28px }
+.ct   { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--gray400); margin-bottom:8px }
+
+/* ── Botões ── */
+.btn   { background:var(--g700); color:var(--white); border:none; border-radius:var(--rs);
+         padding:10px 20px; font-family:var(--fb); font-size:14px; font-weight:500;
+         cursor:pointer; transition:all .18s; text-decoration:none;
+         display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
+.btn:hover  { background:var(--g900) }
+.btn-o { background:transparent; color:var(--g700); border:1.5px solid var(--g300);
+         border-radius:var(--rs); padding:9px 20px; font-family:var(--fb);
+         font-size:14px; font-weight:500; cursor:pointer; transition:all .18s;
+         text-decoration:none; display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
+.btn-o:hover { background:var(--g50) }
+.btn-g { background:transparent; color:var(--gray600); border:none; padding:9px 16px;
+         font-family:var(--fb); font-size:14px; cursor:pointer; border-radius:var(--rs);
+         transition:all .18s; text-decoration:none;
+         display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
+.btn-g:hover { background:var(--gray200) }
+
+/* ── Inputs ── */
+.inp { width:100%; padding:11px 14px; border:1.5px solid var(--gray200);
+      border-radius:var(--rs); font-family:var(--fb); font-size:14px;
+      color:var(--gray800); background:var(--white); outline:none; transition:border-color .18s }
+.inp:focus       { border-color:var(--g500) }
+.inp::placeholder{ color:var(--gray400) }
+.lbl { font-size:12px; font-weight:600; color:var(--gray600); letter-spacing:.04em;
+       text-transform:uppercase; margin-bottom:6px; display:block }
+.sel { width:100%; padding:11px 14px; border:1.5px solid var(--gray200);
+      border-radius:var(--rs); font-family:var(--fb); font-size:14px;
+      color:var(--gray800); background:var(--white); outline:none;
+      appearance:none; cursor:pointer; transition:border-color .18s;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aab9c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center; padding-right:36px }
+.sel:focus { border-color:var(--g500) }
+.fg  { display:flex; flex-direction:column }
+
+/* Grids responsivos — quebram em colunas menores em telas pequenas */
+.g2  { display:grid; grid-template-columns:repeat(2,1fr); gap:14px }
+.g3  { display:grid; grid-template-columns:repeat(3,1fr); gap:14px }
+.g4  { display:grid; grid-template-columns:repeat(4,1fr); gap:12px }
+
+/* ── Barras de macros ── */
+.mbs { display:flex; flex-direction:column; gap:12px }
+.mr  { display:flex; flex-direction:column; gap:5px }
+.mt  { display:flex; justify-content:space-between }
+.mn  { font-size:12px; font-weight:600; color:var(--gray600); text-transform:uppercase; letter-spacing:.06em }
+.mv  { font-size:12px; color:var(--gray400) }
+.mb  { height:8px; background:var(--gray200); border-radius:99px; overflow:hidden }
+.mf  { height:100%; border-radius:99px; transition:width .5s }
+
+/* ── Badges ── */
+.badge { display:inline-block; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600 }
+.bg    { background:var(--g100); color:var(--g700) }
+.bo    { background:#fdf0e8; color:#c96a2a }
+.bb    { background:#e8f0fd; color:#2a5dc9 }
+.bf    { background:#fdf0e8; color:#9b5a12 }
+
+/* ── Tabela ── */
+.tbl    { width:100%; border-collapse:collapse }
+.tbl th { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+          color:var(--gray400); padding:0 12px 10px; text-align:left;
+          border-bottom:1px solid var(--gray200); white-space:nowrap }
+.tbl td { padding:12px 12px; font-size:13px; color:var(--gray800);
+          border-bottom:1px solid var(--gray100); vertical-align:middle }
+.tbl tr:last-child td    { border-bottom:none }
+.tbl tbody tr:hover td   { background:var(--g50) }
+
+/* ── Botão circular de adicionar ── */
+.ab { width:28px; height:28px; border-radius:50%; border:none;
+     background:var(--g100); color:var(--g700); font-size:16px; cursor:pointer;
+     transition:all .18s; display:inline-flex; align-items:center; justify-content:center }
+.ab:hover { background:var(--g700); color:var(--white) }
+
+/* ── Modal ── */
+.overlay { position:fixed; inset:0; background:rgba(26,58,42,.45);
+           backdrop-filter:blur(4px); z-index:9999;
+           display:flex; align-items:center; justify-content:center;
+           animation:fO .3s ease }
+@keyframes fO { from{opacity:0} to{opacity:1} }
+.modal { background:var(--white); border-radius:20px;
+         box-shadow:0 24px 80px rgba(44,106,79,.22);
+         padding:40px 44px; width:min(700px, 95vw);
+         max-height:90vh; overflow-y:auto;
+         animation:sM .35s cubic-bezier(.22,1,.36,1); position:relative }
+@keyframes sM { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:none} }
+
+/* ── Toast ── */
+.toast { position:fixed; bottom:24px; right:24px; z-index:99999;
+         padding:12px 20px; border-radius:var(--rs); font-family:var(--fb);
+         font-size:14px; font-weight:500; box-shadow:var(--shm);
+         pointer-events:none; transform:translateY(20px); opacity:0;
+         transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s; max-width:360px }
+.toast.in { transform:none; opacity:1 }
+.ts { background:var(--g700); color:var(--white) }
+.te { background:#c0392b; color:var(--white) }
+
+/* ── Utilitários ── */
+@keyframes fi { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.fi  { animation:fi .3s ease both }
+.row { display:flex; justify-content:space-between; align-items:center;
+       padding:10px 0; border-bottom:1px solid var(--gray100) }
+.row:last-child { border-bottom:none }
+
+/* ── Responsividade ── */
+/* Telas médias: tablets e monitores menores */
+@media (max-width: 1200px) {
+  .g4 { grid-template-columns:repeat(2,1fr) }
+}
+
+/* Telas pequenas: notebooks compactos */
+@media (max-width: 960px) {
+  .sidebar { width:200px }
+  .ca      { padding:20px 24px 40px }
+  .ph      { padding:24px 24px 0 }
+  .g3      { grid-template-columns:repeat(2,1fr) }
+  .g4      { grid-template-columns:repeat(2,1fr) }
+}
+
+/* Telas muito pequenas: celular/tablet */
+@media (max-width: 640px) {
+  .sidebar { display:none } /* esconde sidebar em telas muito pequenas */
+  .g2      { grid-template-columns:1fr }
+  .g3      { grid-template-columns:1fr }
+  .g4      { grid-template-columns:1fr }
+  .ph      { flex-direction:column }
+  .card    { padding:18px 20px }
+}
+
+/* ── Tema Escuro ──────────────────────────────────────────── */
+/* Ativado quando o <html> tiver o atributo data-theme="dark" */
+
+[data-theme="dark"] {
+  --g900:#95d5b2;
+  --g700:#52b788;
+  --g500:#2d6a4f;
+  --g300:#1a3a2a;
+  --g100:#1a2e22;
+  --g50:#151f19;
+  --white:#1e2a22;
+  --gray100:#151c18;
+  --gray200:#2a3530;
+  --gray400:#6b8070;
+  --gray600:#95a89e;
+  --gray800:#d4e8dc;
+}
+
+/* Transição suave ao trocar de tema */
+*, *::before, *::after {
+  transition: background-color .3s ease, border-color .3s ease, color .2s ease;
+}
+
+/* Botão do toggle de tema */
+.theme-toggle {
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 14px;
+  border:1.5px solid var(--gray200);
+  border-radius:var(--rs);
+  background:transparent;
+  color:var(--gray600);
+  font-family:var(--fb);
+  font-size:13px;
+  cursor:pointer;
+  transition:all .18s;
+  margin-top:10px;
+}
+
+.theme-toggle:hover {
+  border-color:var(--g500);
+  color:var(--g700);
+}
+
+/* O "switch" visual do botão */
+.toggle-track {
+  width:36px;
+  height:20px;
+  background:var(--gray200);
+  border-radius:99px;
+  position:relative;
+  transition:background .3s;
+  flex-shrink:0;
+}
+
+.toggle-thumb {
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:14px;
+  height:14px;
+  background:var(--white);
+  border-radius:50%;
+  transition:transform .3s, background .3s;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+
+/* Estado ativo do switch */
+[data-theme="dark"] .toggle-track {
+  background:var(--g700);
+}
+
+[data-theme="dark"] .toggle-thumb {
+  transform:translateX(16px);
+  background:#fff;
+}

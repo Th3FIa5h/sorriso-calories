@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica o tema salvo antes de renderizar a página (evita flash)
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alimentos — Sorriso Calories</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+  .fl  { display:grid; grid-template-columns:1fr 420px; gap:24px }
+  .sw  { position:relative }
+  .sw svg { position:absolute; left:16px; top:50%; transform:translateY(-50%) }
+  .spl { padding-left:46px !important }
+  .kpv { background:var(--g50); border-radius:var(--rs); padding:20px; text-align:center }
+  .mpr { display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
+  .mpi { background:var(--gray100); border-radius:var(--rs); padding:12px; text-align:center }
+  .pbt { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .pb  { padding:7px 14px; border:1.5px solid var(--gray200); border-radius:var(--rs);
+         background:var(--white); font-size:13px; cursor:pointer; transition:all .18s; color:var(--gray600) }
+  .pb:hover { border-color:var(--g300); color:var(--g700) }
+  .pb.on    { background:var(--g700); border-color:var(--g700); color:var(--white) }
+  /* Botões de editar e excluir na tabela */
+  .act-btn  { padding:5px 12px; border-radius:var(--rs); border:none; font-size:12px; font-weight:600; cursor:pointer; transition:all .18s }
+  .act-edit { background:var(--g100); color:var(--g700) }
+  .act-edit:hover { background:var(--g700); color:var(--white) }
+  .act-del  { background:#fde8e8; color:#c0392b; margin-left:4px }
+  .act-del:hover { background:#c0392b; color:var(--white) }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sidebar-root"></div>
+  <main class="main">
+    <div class="ph">
+      <div><h2>Tabela de Alimentos</h2><p><span id="tot">—</span> alimentos cadastrados</p></div>
+      <a href="cadastro-alimento.html" class="btn">+ Cadastrar Alimento</a>
+    </div>
+    <div class="ca">
+      <div class="fl">
+
+        <!-- Tabela de alimentos -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card" style="padding:20px 24px">
+            <div style="display:flex;gap:12px">
+              <div class="sw" style="flex:1">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray400)" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input class="inp spl" id="sq" placeholder="Buscar alimento...">
+              </div>
+              <select class="sel" style="width:200px" id="scat">
+                <option value="">Todas categorias</option>
+                <option>Proteína</option><option>Carboidrato</option><option>Gordura</option>
+                <option>Fruta</option><option>Vegetal</option><option>Laticínio</option><option>Bebida</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:20px 26px 0"><div class="ct">Alimentos Cadastrados</div></div>
+            <div style="padding:6px 10px;overflow-x:auto">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Alimento</th><th>Porção</th><th>Energia</th>
+                    <th>Prot.</th><th>Carb.</th><th>Gord.</th>
+                    <th>Categoria</th><th style="text-align:right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody">
+                  <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray400)">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding:12px 26px;border-top:1px solid var(--gray100);display:flex;justify-content:space-between;align-items:center">
+              <span id="clbl" style="font-size:13px;color:var(--gray400)"></span>
+              <div class="pbt" id="pag"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel lateral: adicionar à refeição -->
+        <div>
+          <div class="card" id="side" style="display:flex;flex-direction:column;gap:16px">
+            <div class="ct">Adicionar à Refeição</div>
+            <div style="text-align:center;padding:20px 0">
+              <div style="font-size:40px;margin-bottom:8px">🔍</div>
+              <p style="font-size:14px;color:var(--gray400)">Clique em + para selecionar um alimento</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal de edição de alimento -->
+<div class="overlay" id="edit-modal" style="display:none">
+  <div class="modal" style="width:640px">
+    <h3 style="font-family:var(--fd);font-size:22px;font-weight:400;margin-bottom:24px">Editar Alimento</h3>
+    <div class="g2">
+      <div class="fg" style="grid-column:1/-1"><label class="lbl">Nome *</label><input class="inp" id="ed-nome" type="text"></div>
+      <div class="fg"><label class="lbl">Categoria</label>
+        <select class="sel" id="ed-cat">
+          <option>Proteína</option><option>Carboidrato</option><option>Gordura</option>
+          <option>Fruta</option><option>Vegetal</option><option>Laticínio</option>
+          <option>Bebida</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="fg"><label class="lbl">Emoji</label><input class="inp" id="ed-emoji" type="text" maxlength="4"></div>
+      <div class="fg"><label class="lbl">Porção padrão (g)</label><input class="inp" id="ed-porcao" type="number" min="1"></div>
+      <div class="fg"><label class="lbl">Unidade</label>
+        <select class="sel" id="ed-unidade">
+          <option value="g">Gramas (g)</option><option value="ml">ml</option>
+          <option value="un">Unidade</option><option value="col">Colher sopa</option>
+          <option value="xic">Xícara</option><option value="fatia">Fatia</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:var(--gray100);border-radius:var(--rs);padding:16px;margin:16px 0">
+      <div style="font-size:12px;font-weight:600;color:var(--gray400);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">
+        Informações Nutricionais (por porção padrão)
+      </div>
+      <div class="g3">
+        <div class="fg"><label class="lbl">Calorias (kcal) *</label><input class="inp" id="ed-kcal"  type="number" min="0" step="0.1"></div>
+        <div class="fg"><label class="lbl">Proteínas (g)</label>    <input class="inp" id="ed-prot"  type="number" min="0" step="0.1"></div>
+        <div class="fg"><label class="lbl">Carboidratos (g)</label>  <input class="inp" id="ed-carb"  type="number" min="0" step="0.1"></div>
+        <div class="fg"><label class="lbl">Gorduras (g)</label>      <input class="inp" id="ed-fat"   type="number" min="0" step="0.1"></div>
+        <div class="fg"><label class="lbl">Fibras (g)</label>        <input class="inp" id="ed-fibra" type="number" min="0" step="0.1"></div>
+        <div class="fg"><label class="lbl">Sódio (mg)</label>        <input class="inp" id="ed-sodio" type="number" min="0"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:8px">
+      <button class="btn-g" onclick="closeEdit()">Cancelar</button>
+      <button class="btn" id="ed-save-btn" onclick="saveEdit()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  const BC = { 'Proteína':'bb','Carboidrato':'bo','Fruta':'bg','Vegetal':'bg','Laticínio':'bb','Gordura':'bf','Bebida':'bb' };
+  let pg = 1, q = '', cat = '', timer2 = null;
+  let selFood = null; // alimento selecionado no painel lateral
+  let editId  = null; // id do alimento sendo editado
+
+  // Carrega e renderiza a tabela paginada de alimentos
+  async function loadFoods() {
+    try {
+      const d = await GET('alimentos', { q, categoria: cat, page: pg, limit: 15 });
+      document.getElementById('tot').textContent  = d.total;
+      document.getElementById('clbl').textContent = `Mostrando ${d.data.length} de ${d.total}`;
+
+      document.getElementById('tbody').innerHTML = d.data.length
+        ? d.data.map(f => `
+            <tr>
+              <td><div style="font-weight:500">${f.emoji} ${f.nome}</div><div style="font-size:11px;color:var(--gray400)">${f.descricao||''}</div></td>
+              <td>${f.porcao_g}${f.unidade}</td>
+              <td><strong>${f.kcal}</strong> kcal</td>
+              <td>${f.proteina_g}g</td><td>${f.carb_g}g</td><td>${f.gordura_g}g</td>
+              <td><span class="badge ${BC[f.categoria]||'bg'}">${f.categoria}</span></td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="ab" title="Adicionar à refeição" onclick='pickFood(${JSON.stringify(f)})'>+</button>
+                <button class="act-btn act-edit" onclick='openEdit(${JSON.stringify(f)})'>✏️ Editar</button>
+                <button class="act-btn act-del" onclick="delFood(${f.id},'${f.nome.replace(/'/g,"\\'")}')">🗑 Excluir</button>
+              </td>
+            </tr>`).join('')
+        : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray400)">Nenhum alimento encontrado</td></tr>';
+
+      // Botões de paginação
+      const pag = document.getElementById('pag');
+      pag.innerHTML = '';
+      if (d.totalPages > 1) {
+        if (pg > 1) pag.innerHTML += `<button class="pb" onclick="goPg(${pg-1})">← Ant.</button>`;
+        for (let i = Math.max(1,pg-2); i <= Math.min(d.totalPages,pg+2); i++)
+          pag.innerHTML += `<button class="pb${i===pg?' on':''}" onclick="goPg(${i})">${i}</button>`;
+        if (pg < d.totalPages) pag.innerHTML += `<button class="pb" onclick="goPg(${pg+1})">Próx. →</button>`;
+      }
+    } catch(e) { toast('Erro ao carregar: ' + e.message, 'error'); }
+  }
+
+  function goPg(p) { pg = p; loadFoods(); }
+
+  // Busca com debounce: espera 400ms após parar de digitar
+  document.getElementById('sq').addEventListener('input', function() {
+    clearTimeout(timer2); q = this.value;
+    timer2 = setTimeout(() => { pg = 1; loadFoods(); }, 400);
+  });
+  document.getElementById('scat').addEventListener('change', function() {
+    cat = this.value; pg = 1; loadFoods();
+  });
+
+  // Seleciona alimento para adicionar à refeição via painel lateral
+  function pickFood(f) {
+    selFood = f;
+    document.getElementById('side').innerHTML = `
+      <div class="ct">Adicionar à Refeição</div>
+      <div>
+        <div style="font-size:32px;margin-bottom:8px">${f.emoji}</div>
+        <div style="font-size:16px;font-weight:600;color:var(--gray800)">${f.nome}</div>
+        <div style="font-size:12px;color:var(--gray400);margin-top:2px">Por ${f.porcao_g}${f.unidade} · ${f.kcal} kcal</div>
+      </div>
+      <div class="kpv">
+        <div style="font-family:var(--fd);font-size:40px;color:var(--g700)" id="sp-k">${f.kcal}</div>
+        <div style="font-size:12px;color:var(--gray400);text-transform:uppercase;margin-top:4px">kcal</div>
+      </div>
+      <div class="mpr">
+        <div class="mpi"><div style="font-size:16px;font-weight:600" id="sp-p">${f.proteina_g}g</div><div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Prot.</div></div>
+        <div class="mpi"><div style="font-size:16px;font-weight:600" id="sp-c">${f.carb_g}g</div><div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Carb.</div></div>
+        <div class="mpi"><div style="font-size:16px;font-weight:600" id="sp-f">${f.gordura_g}g</div><div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Gord.</div></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="lbl">Quantidade (g)</label><input class="inp" id="sp-q" type="number" value="${f.porcao_g}" oninput="updSide()"></div>
+        <div class="fg"><label class="lbl">Refeição</label>
+          <select class="sel" id="sp-r">
+            <option value="cafe">Café da Manhã</option>
+            <option value="almoco">Almoço</option>
+            <option value="lanche_tarde">Lanche</option>
+            <option value="jantar">Jantar</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:var(--g50);border-radius:var(--rs);padding:13px 16px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--gray600)">Total calculado</span>
+        <span style="font-size:18px;font-weight:700;color:var(--g700)" id="sp-tot">${f.kcal} kcal</span>
+      </div>
+      <button class="btn" style="width:100%;justify-content:center;padding:13px" onclick="addToMeal()">Adicionar à Refeição →</button>`;
+  }
+
+  // Recalcula os valores quando a quantidade muda
+  function updSide() {
+    if (!selFood) return;
+    const qty = parseFloat(document.getElementById('sp-q').value) || 0;
+    const m   = qty / parseFloat(selFood.porcao_g);
+    document.getElementById('sp-k').textContent   = Math.round(selFood.kcal * m);
+    document.getElementById('sp-p').textContent   = (selFood.proteina_g * m).toFixed(1) + 'g';
+    document.getElementById('sp-c').textContent   = (selFood.carb_g * m).toFixed(1) + 'g';
+    document.getElementById('sp-f').textContent   = (selFood.gordura_g * m).toFixed(1) + 'g';
+    document.getElementById('sp-tot').textContent = Math.round(selFood.kcal * m) + ' kcal';
+  }
+
+  // Adiciona o alimento selecionado à refeição do dia
+  async function addToMeal() {
+    const qty   = parseFloat(document.getElementById('sp-q').value);
+    const tipo  = document.getElementById('sp-r').value;
+    const today = new Date().toISOString().split('T')[0];
+    const uid   = UID.get();
+    try {
+      const day = await GET('refeicoes', { usuario_id: uid, data: today });
+      let ref   = day.refeicoes.find(r => r.tipo === tipo);
+      if (!ref) {
+        const c = await POST('refeicoes', { usuario_id: uid, tipo, data_ref: today });
+        ref = { id: c.id };
+      }
+      await POST(`refeicoes/${ref.id}/itens`, { alimento_id: selFood.id, quantidade_g: qty });
+      toast(`${selFood.nome} adicionado ✅`);
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // Abre o modal de edição preenchido com os dados do alimento
+  function openEdit(f) {
+    editId = f.id;
+    document.getElementById('ed-nome').value    = f.nome       || '';
+    document.getElementById('ed-cat').value     = f.categoria  || 'Outro';
+    document.getElementById('ed-emoji').value   = f.emoji      || '🍽️';
+    document.getElementById('ed-porcao').value  = f.porcao_g   || 100;
+    document.getElementById('ed-unidade').value = f.unidade    || 'g';
+    document.getElementById('ed-kcal').value    = f.kcal       || 0;
+    document.getElementById('ed-prot').value    = f.proteina_g || 0;
+    document.getElementById('ed-carb').value    = f.carb_g     || 0;
+    document.getElementById('ed-fat').value     = f.gordura_g  || 0;
+    document.getElementById('ed-fibra').value   = f.fibra_g    || 0;
+    document.getElementById('ed-sodio').value   = f.sodio_mg   || 0;
+    document.getElementById('edit-modal').style.display = 'flex';
+  }
+
+  function closeEdit() {
+    document.getElementById('edit-modal').style.display = 'none';
+    editId = null;
+  }
+
+  // Salva as alterações do alimento editado
+  async function saveEdit() {
+    if (!editId) return;
+    const btn = document.getElementById('ed-save-btn');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+    try {
+      await PUT(`alimentos/${editId}`, {
+        nome:       document.getElementById('ed-nome').value.trim(),
+        categoria:  document.getElementById('ed-cat').value,
+        emoji:      document.getElementById('ed-emoji').value,
+        porcao_g:   parseFloat(document.getElementById('ed-porcao').value) || 100,
+        unidade:    document.getElementById('ed-unidade').value,
+        kcal:       parseFloat(document.getElementById('ed-kcal').value)   || 0,
+        proteina_g: parseFloat(document.getElementById('ed-prot').value)   || 0,
+        carb_g:     parseFloat(document.getElementById('ed-carb').value)   || 0,
+        gordura_g:  parseFloat(document.getElementById('ed-fat').value)    || 0,
+        fibra_g:    parseFloat(document.getElementById('ed-fibra').value)  || 0,
+        sodio_mg:   parseFloat(document.getElementById('ed-sodio').value)  || 0,
+      });
+      toast('Alimento atualizado ✅');
+      closeEdit();
+      loadFoods();
+    } catch(e) { toast('Erro: ' + e.message, 'error'); }
+    finally { btn.textContent = '💾 Salvar Alterações'; btn.disabled = false; }
+  }
+
+  // Exclui o alimento (soft delete: apenas marca como inativo)
+  async function delFood(id, nome) {
+    if (!confirm(`Excluir "${nome}"?\nEle não aparecerá mais na busca.`)) return;
+    try { await DEL(`alimentos/${id}`); toast(`"${nome}" removido ✅`); loadFoods(); }
+    catch(e) { toast('Erro: ' + e.message, 'error'); }
+  }
+
+  // Fecha o modal ao clicar fora dele
+  document.getElementById('edit-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeEdit();
+  });
+
+  scInit('alimentos').then(loadFoods);
+</script>
+</body>
+</html>

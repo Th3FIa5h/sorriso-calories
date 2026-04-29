@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica o tema salvo antes de renderizar a página (evita flash)
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cálculo de Calorias — Sorriso Calories</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+  /* Layout: formulário de entrada | painel de resultados */
+  .ccl  { display:grid; grid-template-columns:450px 1fr; gap:28px }
+
+  /* Card de resultado principal (TDEE) */
+  .bigr { background:var(--g700); border-radius:var(--r); padding:36px 40px;
+          color:var(--white); margin-bottom:20px }
+  .bigv { font-family:var(--fd); font-size:64px; line-height:1 }
+
+  /* Cards menores: TMB, TDEE, Meta */
+  .rcs  { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px }
+  .rc2  { background:var(--white); border-radius:var(--r); box-shadow:var(--sh); padding:22px 24px }
+  .rcv  { font-family:var(--fd); font-size:32px; color:var(--gray800) }
+  .rcl  { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--gray400); margin-top:6px }
+
+  /* Cards de seleção de objetivo */
+  .gg   { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px }
+  .gc   { border:2px solid var(--gray200); border-radius:var(--rs); padding:20px;
+          text-align:center; cursor:pointer; transition:all .18s }
+  .gc:hover  { border-color:var(--g300); background:var(--g50) }
+  .gc.on     { border-color:var(--g700); background:var(--g50) }
+  .gc.on .gcl{ color:var(--g700) }
+  .gcl  { font-size:13px; font-weight:600; color:var(--gray800) }
+  .gcv  { font-family:var(--fd); font-size:24px; color:var(--g700); margin-top:8px }
+
+  /* Grade de distribuição de macros */
+  .mdg  { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:16px }
+
+  /* Caixa da fórmula matemática */
+  .fb   { background:var(--g50); border-radius:var(--rs); padding:18px 22px; margin-top:12px }
+
+  /* Barra do IMC com gradiente de cores */
+  .imcb { height:12px;
+          background:linear-gradient(to right, #60b8e0, #52b788, #e8a838, #e05252);
+          border-radius:99px; position:relative; margin:10px 0 4px }
+  /* Ponteiro que indica a posição do IMC do usuário */
+  .imcp { position:absolute; top:-5px; width:22px; height:22px; border-radius:50%;
+          background:var(--g900); border:3px solid white;
+          transform:translateX(-50%); transition:left .5s }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sidebar-root"></div>
+  <main class="main">
+    <div class="ph">
+      <div><h2>Cálculo de Calorias</h2><p>Fórmula Mifflin-St Jeor — recomendada pela OMS</p></div>
+      <a href="perfil.html" class="btn-o">Editar Perfil</a>
+    </div>
+    <div class="ca">
+      <div class="ccl">
+
+        <!-- Coluna esquerda: entradas do usuário -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="ct" style="margin-bottom:18px">Seus Dados</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="fg">
+                <label class="lbl">Gênero Biológico</label>
+                <select class="sel" id="cg" onchange="calc()">
+                  <option value="F">Feminino</option>
+                  <option value="M">Masculino</option>
+                </select>
+              </div>
+              <div class="g2">
+                <div class="fg"><label class="lbl">Idade (anos)</label><input class="inp" id="ca" type="number" value="30" min="15" max="100" oninput="calc()"></div>
+                <div class="fg"><label class="lbl">Altura (cm)</label><input class="inp" id="ch" type="number" value="165" min="100" max="300" oninput="calc()"></div>
+              </div>
+              <div class="g2">
+                <div class="fg"><label class="lbl">Peso Atual (kg)</label><input class="inp" id="cw" type="number" value="68" step="0.1" min="20" max="300" oninput="calc()"></div>
+				<div class="fg"><label class="lbl">Peso Desejado (kg)</label><input class="inp" id="ct" type="number" value="62" step="0.1" min="20" max="300" oninput="calc()"></div>
+              </div>
+              <div class="fg">
+                <label class="lbl">Nível de Atividade Física</label>
+                <select class="sel" id="cv" onchange="calc()">
+                  <option value="1.2">Sedentário (sem exercício)</option>
+                  <option value="1.375" selected>Levemente ativo (1–3x/sem)</option>
+                  <option value="1.55">Moderadamente ativo (3–5x/sem)</option>
+                  <option value="1.725">Muito ativo (6–7x/sem)</option>
+                  <option value="1.9">Extremamente ativo (atleta)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Exibe a fórmula com os valores reais do usuário -->
+          <div class="card">
+            <div class="ct">Fórmula Mifflin-St Jeor</div>
+            <div class="fb">
+              <div style="font-size:13px;color:var(--gray600);line-height:2" id="ftxt">
+                Preencha os dados acima...
+              </div>
+            </div>
+          </div>
+
+          <!-- Indicador visual do IMC -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:14px">IMC — Índice de Massa Corporal</div>
+            <div style="display:flex;align-items:center;gap:22px">
+              <div style="text-align:center;flex-shrink:0">
+                <div style="font-family:var(--fd);font-size:48px;color:var(--g700)" id="iv">—</div>
+                <div style="font-size:11px;color:var(--gray400);text-transform:uppercase;letter-spacing:.06em">IMC</div>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:15px;font-weight:600;margin-bottom:6px" id="ic">—</div>
+                <!-- Barra colorida: azul=abaixo, verde=normal, laranja=sobrepeso, vermelho=obeso -->
+                <div class="imcb"><div class="imcp" id="ip" style="left:40%"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray400)">
+                  <span>Abaixo</span><span>Normal</span><span>Sobrepeso</span><span>Obeso</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Salva a meta calculada no perfil do usuário -->
+          <button class="btn" style="width:100%;justify-content:center;padding:14px"
+                  onclick="saveProfile()">💾 Salvar Meta no Perfil</button>
+        </div>
+
+        <!-- Coluna direita: resultados -->
+        <div>
+          <!-- Card principal: TDEE total -->
+          <div class="bigr">
+            <div style="font-size:13px;opacity:.8;text-transform:uppercase;letter-spacing:.1em">
+              Gasto Calórico Diário — TDEE
+            </div>
+            <div class="bigv" id="tv">—</div>
+            <div style="font-size:18px;opacity:.8">kcal / dia</div>
+          </div>
+
+          <!-- Cards: TMB | TDEE | Meta atual -->
+          <div class="rcs">
+            <div class="rc2">
+              <div class="rcv" id="bv">—</div>
+              <div class="rcl">TMB — Metabolismo Basal</div>
+              <div style="font-size:12px;color:var(--gray400);margin-top:4px">Em repouso total</div>
+            </div>
+            <div class="rc2">
+              <div class="rcv" id="tv2">—</div>
+              <div class="rcl">TDEE — Com atividade</div>
+              <div style="font-size:12px;color:var(--gray400);margin-top:4px">Para manutenção</div>
+            </div>
+            <div class="rc2">
+              <div class="rcv" id="tgt" style="color:var(--g700)">—</div>
+              <div class="rcl">Sua Meta Atual</div>
+              <div style="font-size:12px;color:var(--gray400);margin-top:4px" id="tsub">—</div>
+            </div>
+          </div>
+
+          <!-- Comparação das kcal por objetivo -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="ct" style="margin-bottom:14px">Distribuição por Objetivo</div>
+            <div class="gg">
+              <div class="gc" onclick="setG('loss',this)">
+                <div style="font-size:28px;margin-bottom:10px">⚖️</div>
+                <div class="gcl">Perda de Peso</div>
+                <div class="gcv" id="gl">—</div>
+                <div style="font-size:11px;color:var(--gray400);margin-top:4px">Déficit 400 kcal</div>
+              </div>
+              <div class="gc on" onclick="setG('maintain',this)">
+                <div style="font-size:28px;margin-bottom:10px">🔄</div>
+                <div class="gcl">Manutenção</div>
+                <div class="gcv" id="gm">—</div>
+                <div style="font-size:11px;color:var(--gray400);margin-top:4px">Equilíbrio</div>
+              </div>
+              <div class="gc" onclick="setG('gain',this)">
+                <div style="font-size:28px;margin-bottom:10px">💪</div>
+                <div class="gcl">Ganho de Massa</div>
+                <div class="gcv" id="gg2">—</div>
+                <div style="font-size:11px;color:var(--gray400);margin-top:4px">Superávit 300 kcal</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribuição recomendada de macros -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="ct">Macronutrientes Recomendados</div>
+              <span style="font-size:12px;color:var(--gray400)">25% prot · 45% carb · 30% gord</span>
+            </div>
+            <div class="mdg">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="mt"><span class="mn">🥩 Proteínas</span><span class="mv" id="mpp">25%</span></div>
+                <div class="mb"><div class="mf" id="mpb" style="width:25%;background:var(--g700)"></div></div>
+                <div style="font-size:12px;color:var(--gray400)" id="mpg">—</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="mt"><span class="mn">🌾 Carboidratos</span><span class="mv" id="mcp">45%</span></div>
+                <div class="mb"><div class="mf" id="mcb" style="width:45%;background:var(--g500)"></div></div>
+                <div style="font-size:12px;color:var(--gray400)" id="mcg">—</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="mt"><span class="mn">🫒 Gorduras</span><span class="mv" id="mfp">30%</span></div>
+                <div class="mb"><div class="mf" id="mfb" style="width:30%;background:var(--g300)"></div></div>
+                <div style="font-size:12px;color:var(--gray400)" id="mfg">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let tdee = 0, bmr = 0, goal = 'maintain';
+  const v = id => document.getElementById(id);
+
+  // Carrega os dados salvos do perfil nos campos
+  async function loadUser() {
+    try {
+      const u = await GET(`usuarios/${UID.get()}`);
+      if (u.genero)    v('cg').value = u.genero;
+      if (u.peso_atual)v('cw').value = u.peso_atual;
+      if (u.peso_alvo) v('ct').value = u.peso_alvo;
+      if (u.altura_cm) v('ch').value = u.altura_cm;
+      if (u.data_nasc) v('ca').value = Math.floor((Date.now() - new Date(u.data_nasc)) / 31557600000);
+      // Mapeia o valor salvo no banco para o fator de atividade do select
+      const fm = { sedentary:'1.2', light:'1.375', moderate:'1.55', active:'1.725', extra:'1.9' };
+      if (u.nivel_ativ) v('cv').value = fm[u.nivel_ativ] || '1.375';
+      goal = u.objetivo || 'maintain';
+    } catch(e) {}
+    calc();
+  }
+
+  // Executa o cálculo TMB / TDEE / IMC com os valores atuais dos campos
+  function calc() {
+    const g   = v('cg').value;
+    const age = parseInt(v('ca').value) || 30;
+    const h   = parseFloat(v('ch').value) || 165;
+    const w   = parseFloat(v('cw').value) || 68;
+    const fac = parseFloat(v('cv').value) || 1.375;
+      
+    // Aplica limites
+  	w = Math.max(20, Math.min(300, w));
+  	h = Math.max(100, Math.min(300, h));
+
+    // Fórmula Mifflin-St Jeor diferenciada por gênero
+    bmr  = g === 'M' ? 10*w + 6.25*h - 5*age + 5 : 10*w + 6.25*h - 5*age - 161;
+    tdee = Math.round(bmr * fac);
+
+    const loss = tdee - 400;  // déficit para perda de peso
+    const gain = tdee + 300;  // superávit para ganho de massa
+    const tgt  = goal === 'loss' ? loss : goal === 'gain' ? gain : tdee;
+
+    // Atualiza todos os cards de resultado
+    v('tv').textContent  = tdee.toLocaleString('pt-BR');
+    v('tv2').textContent = tdee.toLocaleString('pt-BR');
+    v('bv').textContent  = Math.round(bmr).toLocaleString('pt-BR');
+    v('tgt').textContent = tgt.toLocaleString('pt-BR');
+    v('tsub').textContent= goal==='loss' ? 'Déficit de 400 kcal' : goal==='gain' ? 'Superávit de 300 kcal' : 'Manutenção';
+    v('gl').textContent  = loss.toLocaleString('pt-BR');
+    v('gm').textContent  = tdee.toLocaleString('pt-BR');
+    v('gg2').textContent = gain.toLocaleString('pt-BR');
+
+    // Calcula e exibe o IMC
+    const imc = w / ((h/100)**2);
+    let cls, pct;
+    if      (imc < 18.5) { cls = 'Abaixo do peso'; pct = 8;  }
+    else if (imc < 25)   { cls = 'Peso normal';     pct = 35; }
+    else if (imc < 30)   { cls = 'Sobrepeso';        pct = 62; }
+    else                 { cls = 'Obesidade';         pct = 85; }
+    v('iv').textContent = imc.toFixed(1).replace('.', ',');
+    v('ic').textContent = cls;
+    v('ip').style.left  = pct + '%';
+
+    // Exibe a fórmula com os valores reais substituídos
+    const sign = g === 'M' ? '+5' : '−161';
+    v('ftxt').innerHTML =
+      `TMB = 10 × <strong>${w} kg</strong> + 6,25 × <strong>${h} cm</strong> − 5 × <strong>${age} anos</strong> ${sign} = <strong>${Math.round(bmr)} kcal</strong><br>
+       TDEE = TMB × <strong>${fac}</strong> = <strong>${tdee.toLocaleString('pt-BR')} kcal/dia</strong>`;
+
+    // Calcula e exibe a distribuição recomendada de macros
+    const pk = Math.round(tgt * 0.25);  // 25% proteínas
+    const ck = Math.round(tgt * 0.45);  // 45% carboidratos
+    const fk = Math.round(tgt * 0.30);  // 30% gorduras
+    v('mpg').textContent = `${Math.round(pk/4)}g/dia · ${pk} kcal`;
+    v('mcg').textContent = `${Math.round(ck/4)}g/dia · ${ck} kcal`;
+    v('mfg').textContent = `${Math.round(fk/9)}g/dia · ${fk} kcal`;
+  }
+
+  // Muda o objetivo selecionado e recalcula
+  function setG(g, el) {
+    document.querySelectorAll('.gc').forEach(c => c.classList.remove('on'));
+    el.classList.add('on');
+    goal = g;
+    calc();
+  }
+
+  // Salva os dados atuais dos campos no perfil do usuário
+  async function saveProfile() {
+    try {
+      await PUT(`usuarios/${UID.get()}`, {
+        objetivo:   goal,
+        peso_atual: parseFloat(v('cw').value) || null,
+        peso_alvo:  parseFloat(v('ct').value) || null,
+        altura_cm:  parseInt(v('ch').value)   || null,
+      });
+      toast('Meta salva no perfil ✅');
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  scInit('calculo').then(loadUser);
+</script>
+</body>
+</html>

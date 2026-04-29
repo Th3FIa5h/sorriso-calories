@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica o tema salvo antes de renderizar a página (evita flash)
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastrar Alimento — Sorriso Calories</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+  /* Layout: formulário à esquerda, preview à direita */
+  .cl  { display:grid; grid-template-columns:1fr 360px; gap:28px }
+
+  /* Grade de categorias */
+  .cg  { display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
+  .co  { border:2px solid var(--gray200); border-radius:var(--rs); padding:14px 10px;
+         text-align:center; cursor:pointer; transition:all .18s }
+  .co:hover  { border-color:var(--g300); background:var(--g50) }
+  .co.on     { border-color:var(--g700); background:var(--g50) }
+  .co.on .col{ color:var(--g700) }
+  .coi { font-size:22px; margin-bottom:6px }
+  .col { font-size:12px; font-weight:600; color:var(--gray800) }
+
+  /* Card de preview ao vivo */
+  .pvc { background:var(--white); border-radius:var(--r); box-shadow:var(--sh);
+         padding:28px; display:flex; flex-direction:column; gap:16px;
+         position:sticky; top:24px }
+
+  /* Separador de seção dentro do formulário */
+  .ss2 { font-size:12px; font-weight:600; color:var(--gray400); text-transform:uppercase;
+         letter-spacing:.07em; padding-bottom:8px; border-bottom:1px solid var(--gray200);
+         margin-bottom:4px }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sidebar-root"></div>
+  <main class="main">
+    <div class="ph">
+      <div><h2>Cadastrar Alimento</h2><p>Adicione um novo alimento ao banco de dados</p></div>
+      <a href="alimentos.html" class="btn-g">← Voltar</a>
+    </div>
+    <div class="ca">
+      <div class="cl">
+
+        <!-- ── Formulário ── -->
+        <div style="display:flex;flex-direction:column;gap:22px">
+
+          <!-- Identificação básica -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:18px">Identificação</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="fg">
+                <label class="lbl">Nome do Alimento *</label>
+                <input class="inp" id="fn" placeholder="Ex: Peito de Frango Grelhado" oninput="upd()">
+              </div>
+              <div class="g2">
+                <div class="fg"><label class="lbl">Marca / Fabricante</label><input class="inp" id="fm" placeholder="Opcional"></div>
+                <div class="fg">
+                  <label class="lbl">Fonte dos dados</label>
+                  <select class="sel" id="fft">
+                    <option value="Manual">Cadastro manual</option>
+                    <option value="TACO">TACO/IBGE</option>
+                    <option value="Rótulo">Rótulo do produto</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label class="lbl">Porção padrão (g) *</label>
+                  <input class="inp" id="fp" type="number" value="100" min="1" oninput="upd()">
+                </div>
+                <div class="fg">
+                  <label class="lbl">Unidade de medida</label>
+                  <select class="sel" id="fu">
+                    <option value="g">Gramas (g)</option>
+                    <option value="ml">Mililitros (ml)</option>
+                    <option value="un">Unidade</option>
+                    <option value="col">Colher sopa</option>
+                    <option value="xic">Xícara</option>
+                    <option value="fatia">Fatia</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Seletor de emoji: clique para escolher o ícone -->
+              <div class="fg">
+                <label class="lbl">Emoji</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap" id="emg"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seleção de categoria -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:14px">Categoria</div>
+            <div class="cg">
+              <div class="co on" data-c="Proteína"    onclick="pickCat(this)"><div class="coi">🥩</div><div class="col">Proteína</div></div>
+              <div class="co"    data-c="Carboidrato" onclick="pickCat(this)"><div class="coi">🌾</div><div class="col">Carboidrato</div></div>
+              <div class="co"    data-c="Gordura"     onclick="pickCat(this)"><div class="coi">🫒</div><div class="col">Gordura</div></div>
+              <div class="co"    data-c="Fruta"       onclick="pickCat(this)"><div class="coi">🍎</div><div class="col">Fruta</div></div>
+              <div class="co"    data-c="Vegetal"     onclick="pickCat(this)"><div class="coi">🥦</div><div class="col">Vegetal</div></div>
+              <div class="co"    data-c="Laticínio"   onclick="pickCat(this)"><div class="coi">🥛</div><div class="col">Laticínio</div></div>
+            </div>
+          </div>
+
+          <!-- Informações nutricionais -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:18px">
+              Informações Nutricionais
+              <span style="font-weight:300;text-transform:none;font-size:12px;color:var(--gray400)"> — por porção padrão</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:18px">
+
+              <!-- Energia -->
+              <div>
+                <div class="ss2">Energia</div>
+                <div class="g2">
+                  <div class="fg">
+                    <label class="lbl">Calorias (kcal) *</label>
+                    <input class="inp" id="fk" type="number" placeholder="Ex: 165" min="0" oninput="upd()">
+                  </div>
+                  <div class="fg">
+                    <label class="lbl">Energia (kJ) — calculado auto</label>
+                    <!-- Campo readonly: calculado automaticamente a partir das kcal -->
+                    <input class="inp" id="fkj" type="number" readonly style="background:var(--gray100)">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Macronutrientes -->
+              <div>
+                <div class="ss2">Macronutrientes (g)</div>
+                <div class="g3">
+                  <div class="fg"><label class="lbl">Proteínas</label>    <input class="inp" id="fpr" type="number" placeholder="0" min="0" step="0.1" oninput="upd()"></div>
+                  <div class="fg"><label class="lbl">Carboidratos</label>  <input class="inp" id="fca" type="number" placeholder="0" min="0" step="0.1" oninput="upd()"></div>
+                  <div class="fg"><label class="lbl">Gorduras totais</label><input class="inp" id="ffa" type="number" placeholder="0" min="0" step="0.1" oninput="upd()"></div>
+                  <div class="fg"><label class="lbl">Gordura saturada</label><input class="inp" id="fsa" type="number" placeholder="0" min="0" step="0.1"></div>
+                  <div class="fg"><label class="lbl">Fibra alimentar</label><input class="inp" id="ffi" type="number" placeholder="0" min="0" step="0.1"></div>
+                  <div class="fg"><label class="lbl">Açúcares</label>      <input class="inp" id="fac" type="number" placeholder="0" min="0" step="0.1"></div>
+                </div>
+              </div>
+
+              <!-- Micronutrientes (opcionais) -->
+              <div>
+                <div class="ss2">Micronutrientes (opcional)</div>
+                <div class="g4">
+                  <div class="fg"><label class="lbl">Sódio (mg)</label>    <input class="inp" id="fso" type="number" placeholder="0"></div>
+                  <div class="fg"><label class="lbl">Cálcio (mg)</label>   <input class="inp" id="fcl" type="number" placeholder="0"></div>
+                  <div class="fg"><label class="lbl">Ferro (mg)</label>    <input class="inp" id="ffe" type="number" placeholder="0" step="0.1"></div>
+                  <div class="fg"><label class="lbl">Vitamina C (mg)</label><input class="inp" id="fvc" type="number" placeholder="0" step="0.1"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botões de ação -->
+          <div style="display:flex;justify-content:flex-end;gap:12px">
+            <a href="alimentos.html" class="btn-g">Cancelar</a>
+            <!-- Salva e abre formulário limpo para cadastrar outro -->
+            <button class="btn-o" onclick="saveFood(true)">Salvar e Novo</button>
+            <button class="btn" id="sbtn" onclick="saveFood(false)">✅ Salvar Alimento</button>
+          </div>
+        </div>
+
+        <!-- ── Preview ao vivo ── -->
+        <div>
+          <div class="pvc">
+            <div class="ct">Pré-visualização</div>
+            <!-- Atualiza em tempo real conforme o usuário preenche o formulário -->
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:38px" id="pem">🍽️</div>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:var(--gray800)" id="pnm">Nome do alimento</div>
+                <div style="font-size:13px;color:var(--gray400)" id="ppo">Por 100g</div>
+              </div>
+            </div>
+            <div style="background:var(--g50);border-radius:var(--rs);padding:20px;text-align:center">
+              <div style="font-family:var(--fd);font-size:48px;color:var(--g700);line-height:1" id="pkc">0</div>
+              <div style="font-size:12px;color:var(--gray400);text-transform:uppercase;letter-spacing:.06em;margin-top:4px">kcal por porção</div>
+            </div>
+            <!-- Cards de macros -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <div style="background:var(--gray100);border-radius:var(--rs);padding:12px;text-align:center">
+                <div style="font-size:16px;font-weight:600" id="ppr">0g</div>
+                <div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Prot.</div>
+              </div>
+              <div style="background:var(--gray100);border-radius:var(--rs);padding:12px;text-align:center">
+                <div style="font-size:16px;font-weight:600" id="pca">0g</div>
+                <div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Carb.</div>
+              </div>
+              <div style="background:var(--gray100);border-radius:var(--rs);padding:12px;text-align:center">
+                <div style="font-size:16px;font-weight:600" id="pfa">0g</div>
+                <div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Gord.</div>
+              </div>
+            </div>
+            <!-- Barras de distribuição percentual dos macros -->
+            <div class="mbs">
+              <div class="mr"><div class="mt"><span class="mn">Proteína</span><span class="mv" id="pp-p">0%</span></div><div class="mb"><div class="mf" id="pb-p" style="width:0%;background:var(--g700)"></div></div></div>
+              <div class="mr"><div class="mt"><span class="mn">Carboidrato</span><span class="mv" id="pp-c">0%</span></div><div class="mb"><div class="mf" id="pb-c" style="width:0%;background:var(--g500)"></div></div></div>
+              <div class="mr"><div class="mt"><span class="mn">Gordura</span><span class="mv" id="pp-f">0%</span></div><div class="mb"><div class="mf" id="pb-f" style="width:0%;background:var(--g300)"></div></div></div>
+            </div>
+            <!-- Alerta de consistência entre kcal informado e calculado -->
+            <div id="pval"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let emo = '🍽️'; // emoji selecionado
+
+  // Renderiza a grade de emojis para seleção
+  document.getElementById('emg').innerHTML =
+    ['🍗','🍚','🥚','🐟','🥩','🥛','🧀','🍌','🍎','🍞','🌾','🥗','🫒','🥜','🫘','🍠','🫐','🥦','🥕','🍊']
+    .map(e => `
+      <button type="button" onclick="pickEmo('${e}',this)"
+        style="font-size:22px;padding:8px;border:2px solid var(--gray200);
+               border-radius:8px;background:var(--white);cursor:pointer;transition:all .15s">
+        ${e}
+      </button>`).join('');
+
+  // Marca visualmente o emoji selecionado
+  function pickEmo(e, el) {
+    emo = e;
+    document.querySelectorAll('#emg button').forEach(b => b.style.borderColor = 'var(--gray200)');
+    el.style.borderColor = 'var(--g700)';
+    upd();
+  }
+
+  function pickCat(el) {
+    document.querySelectorAll('.co').forEach(o => o.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  // Atalho para pegar valor de um campo pelo id
+  const v = id => document.getElementById(id);
+
+  // Atualiza o preview ao vivo conforme o usuário preenche
+  function upd() {
+    const nm = v('fn').value || 'Nome do alimento';
+    const po = v('fp').value || '100';
+    const k  = parseFloat(v('fk').value)  || 0;
+    const p  = parseFloat(v('fpr').value) || 0;
+    const c  = parseFloat(v('fca').value) || 0;
+    const f  = parseFloat(v('ffa').value) || 0;
+
+    v('pem').textContent  = emo;
+    v('pnm').textContent  = nm;
+    v('ppo').textContent  = `Por ${po}g`;
+    v('pkc').textContent  = k;
+    v('ppr').textContent  = p + 'g';
+    v('pca').textContent  = c + 'g';
+    v('pfa').textContent  = f + 'g';
+
+    // Converte kcal → kJ automaticamente (1 kcal = 4,184 kJ)
+    v('fkj').value = Math.round(k * 4.184) || '';
+
+    // Calcula a % de cada macro em relação às calorias totais
+    const tot = p*4 + c*4 + f*9 || 1;
+    const pp = Math.round(p*4/tot*100);
+    const pc = Math.round(c*4/tot*100);
+    const pf = Math.round(f*9/tot*100);
+    v('pp-p').textContent = pp + '%'; v('pb-p').style.width = pp + '%';
+    v('pp-c').textContent = pc + '%'; v('pb-c').style.width = pc + '%';
+    v('pp-f').textContent = pf + '%'; v('pb-f').style.width = pf + '%';
+
+    // Valida se o kcal informado bate com o calculado pelos macros
+    const calc = Math.round(p*4 + c*4 + f*9);
+    if (k > 0 && (p > 0 || c > 0 || f > 0)) {
+      const diff = Math.abs(k - calc);
+      v('pval').innerHTML = diff <= 25
+        ? `<div style="background:var(--g50);color:var(--g700);padding:10px 14px;border-radius:var(--rs);font-size:13px">✅ Valores consistentes (calc: ${calc} kcal)</div>`
+        : `<div style="background:#fdf0e8;color:#c96a2a;padding:10px 14px;border-radius:var(--rs);font-size:13px">⚠️ Divergência de ${diff} kcal (calc: ${calc})</div>`;
+    } else {
+      v('pval').innerHTML = '';
+    }
+  }
+
+  // Salva o alimento via API
+  async function saveFood(andNew) {
+    const nome = v('fn').value.trim();
+    const kcal = v('fk').value;
+    if (!nome) { toast('Informe o nome do alimento', 'error'); return; }
+    if (!kcal) { toast('Informe as calorias', 'error'); return; }
+
+    const cat  = document.querySelector('.co.on').dataset.c;
+    const btn  = v('sbtn');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+
+    try {
+      await POST('alimentos', {
+        nome,
+        emoji:         emo,
+        categoria:     cat,
+        marca:         v('fm').value  || null,
+        fonte:         v('fft').value,
+        porcao_g:      parseFloat(v('fp').value)  || 100,
+        unidade:       v('fu').value,
+        kcal:          parseFloat(kcal),
+        proteina_g:    parseFloat(v('fpr').value) || 0,
+        carb_g:        parseFloat(v('fca').value) || 0,
+        gordura_g:     parseFloat(v('ffa').value) || 0,
+        gord_sat_g:    parseFloat(v('fsa').value) || 0,
+        fibra_g:       parseFloat(v('ffi').value) || 0,
+        acucar_g:      parseFloat(v('fac').value) || 0,
+        sodio_mg:      parseFloat(v('fso').value) || 0,
+        calcio_mg:     parseFloat(v('fcl').value) || 0,
+        ferro_mg:      parseFloat(v('ffe').value) || 0,
+        vitamina_c_mg: parseFloat(v('fvc').value) || 0,
+      });
+
+      toast(`"${nome}" cadastrado ✅`);
+      // Se "Salvar e Novo": limpa o formulário; senão, volta para a lista
+      if (andNew) setTimeout(() => location.reload(), 800);
+      else        setTimeout(() => location.href = 'alimentos.html', 800);
+
+    } catch(e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.textContent = '✅ Salvar Alimento'; btn.disabled = false;
+    }
+  }
+
+  scInit('cadastro-alimento');
+</script>
+</body>
+</html>

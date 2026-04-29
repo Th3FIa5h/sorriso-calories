@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil — Sorriso Calories</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+  .pl  { display:grid; grid-template-columns:300px 1fr; gap:24px }
+  .pc  { background:var(--white); border-radius:var(--r); box-shadow:var(--sh);
+         padding:36px 28px; display:flex; flex-direction:column; align-items:center; text-align:center }
+  .pav { width:88px; height:88px; border-radius:50%; background:var(--g300);
+         display:flex; align-items:center; justify-content:center;
+         font-size:32px; font-weight:600; color:var(--g900); margin-bottom:16px }
+  .pnm { font-family:var(--fd); font-size:22px; font-weight:500; color:var(--gray800) }
+  .pem { font-size:13px; color:var(--gray400); margin-top:4px }
+  .dv  { width:100%; height:1px; background:var(--gray200); margin:20px 0 }
+  .pr  { display:flex; justify-content:space-between; width:100%; padding:8px 0 }
+  .prl { font-size:13px; color:var(--gray600) }
+  .prv { font-size:13px; font-weight:600; color:var(--gray800) }
+  .gbadge { margin-top:16px; padding:10px 20px; border-radius:99px;
+            background:var(--g100); color:var(--g700); font-size:13px; font-weight:600 }
+  .gos { display:grid; grid-template-columns:repeat(3,1fr); gap:14px }
+  .go  { border:2px solid var(--gray200); border-radius:var(--rs); padding:20px 16px;
+         text-align:center; cursor:pointer; transition:all .18s }
+  .go:hover   { border-color:var(--g300); background:var(--g50) }
+  .go.on      { border-color:var(--g700); background:var(--g50) }
+  .go.on .gol { color:var(--g700) }
+  .goi { font-size:28px; margin-bottom:10px }
+  .gol { font-size:14px; font-weight:600; color:var(--gray800) }
+  .god { font-size:12px; color:var(--gray400); margin-top:4px }
+
+  /* Modal de excluir conta */
+  .delete-modal { max-width:480px; text-align:center }
+  .delete-emoji { font-size:64px; margin-bottom:16px; display:block }
+  .delete-title { font-family:var(--fd); font-size:24px; font-weight:400;
+                  color:var(--gray800); margin-bottom:10px }
+  .delete-msg   { font-size:15px; color:var(--gray600); line-height:1.6; margin-bottom:28px }
+  .delete-btn   { background:#c0392b; color:#fff; border:none; border-radius:var(--rs);
+                  padding:12px 28px; font-family:var(--fb); font-size:14px;
+                  font-weight:600; cursor:pointer; transition:all .18s }
+  .delete-btn:hover  { background:#a93226 }
+  .delete-btn-cancel { background:transparent; color:var(--gray600);
+                       border:1.5px solid var(--gray200); border-radius:var(--rs);
+                       padding:11px 28px; font-family:var(--fb); font-size:14px;
+                       cursor:pointer; transition:all .18s; margin-right:10px }
+  .delete-btn-cancel:hover { background:var(--gray200) }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sidebar-root"></div>
+  <main class="main">
+    <div class="ph">
+      <div><h2>Perfil & Objetivos</h2><p>Gerencie seus dados pessoais e metas de saúde</p></div>
+      <a href="calculo.html" class="btn-o">📊 Ver Cálculo</a>
+    </div>
+    <div class="ca">
+      <div class="pl">
+
+        <!-- Card de resumo lateral -->
+        <div class="pc">
+          <div class="pav" id="p-av">?</div>
+          <div class="pnm" id="p-nm">—</div>
+          <div class="pem" id="p-em">—</div>
+          <div class="dv"></div>
+          <div class="pr"><span class="prl">Peso atual</span>   <span class="prv" id="p-pe">—</span></div>
+          <div class="pr"><span class="prl">Peso desejado</span><span class="prv" id="p-al">—</span></div>
+          <div class="pr"><span class="prl">Altura</span>       <span class="prv" id="p-al2">—</span></div>
+          <div class="pr"><span class="prl">IMC</span>           <span class="prv" id="p-im">—</span></div>
+          <div class="pr"><span class="prl">Meta calórica</span><span class="prv" id="p-kc">—</span></div>
+          <div class="pr"><span class="prl">Membro desde</span> <span class="prv" id="p-sd">—</span></div>
+          <div class="gbadge" id="p-gb">—</div>
+          <div style="margin-top:20px;width:100%;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;font-weight:600;color:var(--gray400);text-transform:uppercase;letter-spacing:.06em">Progresso de peso</span>
+              <span style="font-size:12px;color:var(--g700);font-weight:600" id="p-pg">—</span>
+            </div>
+            <div class="mb" style="height:10px">
+              <div class="mf" id="p-pb" style="width:0%;background:var(--g500)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulários -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Dados pessoais -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:18px">Dados Pessoais</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="g2">
+                <div class="fg"><label class="lbl">Nome completo</label><input class="inp" id="e-nm" type="text"></div>
+                <div class="fg"><label class="lbl">E-mail</label><input class="inp" id="e-em" type="email"></div>
+                <div class="fg"><label class="lbl">Data de Nascimento</label><input class="inp" id="e-ns" type="date"></div>
+                <div class="fg">
+                  <label class="lbl">Sexo Biológico</label>
+                  <select class="sel" id="e-gn">
+                    <option value="F">Feminino</option>
+                    <option value="M">Masculino</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Medidas -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:18px">Medidas & Composição</div>
+            <div class="g3">
+              <div class="fg"><label class="lbl">Peso atual (kg)</label>    <input class="inp" id="e-pe" type="number" step="0.1"></div>
+              <div class="fg"><label class="lbl">Peso desejado (kg)</label> <input class="inp" id="e-al" type="number" step="0.1"></div>
+              <div class="fg"><label class="lbl">Altura (cm)</label>         <input class="inp" id="e-at" type="number"></div>
+              <div class="fg">
+                <label class="lbl">Nível de Atividade</label>
+                <select class="sel" id="e-av">
+                  <option value="sedentary">Sedentário</option>
+                  <option value="light">Levemente ativo (1–3x/sem)</option>
+                  <option value="moderate">Moderadamente ativo (3–5x/sem)</option>
+                  <option value="active">Muito ativo (6–7x/sem)</option>
+                  <option value="extra">Extremamente ativo</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="lbl">Refeições por dia</label>
+                <select class="sel" id="e-rf">
+                  <option value="3">3 refeições</option>
+                  <option value="4">4 refeições</option>
+                  <option value="5">5 refeições</option>
+                  <option value="6">6 refeições</option>
+                </select>
+              </div>
+              <div class="fg"><label class="lbl">Meta de água (L/dia)</label><input class="inp" id="e-ag" type="number" step="0.5" min="1" max="6"></div>
+            </div>
+          </div>
+
+          <!-- Objetivo -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:16px">Objetivo Principal</div>
+            <div class="gos">
+              <div class="go" data-g="loss" onclick="pickGoal(this)">
+                <div class="goi">⚖️</div>
+                <div class="gol">Perda de Peso</div>
+                <div class="god">Déficit calórico controlado</div>
+              </div>
+              <div class="go" data-g="gain" onclick="pickGoal(this)">
+                <div class="goi">💪</div>
+                <div class="gol">Ganho de Massa</div>
+                <div class="god">Superávit calórico + proteína</div>
+              </div>
+              <div class="go" data-g="maintain" onclick="pickGoal(this)">
+                <div class="goi">🔄</div>
+                <div class="gol">Manutenção</div>
+                <div class="god">Equilíbrio calórico diário</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botões de ação -->
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <button onclick="openDeleteModal()"
+              style="background:transparent;border:none;color:#c0392b;
+                     font-family:var(--fb);font-size:13px;cursor:pointer;
+                     padding:8px 0;text-decoration:underline">
+              Excluir minha conta
+            </button>
+            <div style="display:flex;gap:12px">
+              <button class="btn-g" onclick="loadUser()">↺ Descartar alterações</button>
+              <button class="btn" id="sbtn" onclick="save()">✅ Salvar Alterações</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal de excluir conta -->
+<div class="overlay" id="delete-overlay" style="display:none">
+  <div class="modal delete-modal">
+    <span class="delete-emoji" id="del-emoji">😱</span>
+    <h3 class="delete-title" id="del-title">Excluir conta?</h3>
+    <p class="delete-msg" id="del-msg"></p>
+    <div id="del-actions"></div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  const v  = id => document.getElementById(id);
+  const GL = { loss:'🎯 Perda de Peso', gain:'🎯 Ganho de Massa', maintain:'🎯 Manutenção' };
+
+  function pickGoal(el) {
+    document.querySelectorAll('.go').forEach(o => o.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  async function loadUser() {
+    try {
+      const u = await GET(`usuarios/${UID.get()}`);
+      v('p-av').textContent  = initials(u.nome);
+      v('p-nm').textContent  = u.nome;
+      v('p-em').textContent  = u.email;
+      v('p-pe').textContent  = u.peso_atual  ? u.peso_atual  + ' kg' : '—';
+      v('p-al').textContent  = u.peso_alvo   ? u.peso_alvo   + ' kg' : '—';
+      v('p-al2').textContent = u.altura_cm   ? u.altura_cm   + ' cm' : '—';
+      v('p-kc').textContent  = u.meta_kcal   ? (+u.meta_kcal).toLocaleString('pt-BR') + ' kcal/dia' : '—';
+      v('p-gb').textContent  = GL[u.objetivo] || '—';
+      if (u.imc)       v('p-im').textContent = u.imc;
+      if (u.criado_em) v('p-sd').textContent = new Date(u.criado_em).toLocaleDateString('pt-BR', { month:'short', year:'numeric' });
+      if (u.peso_atual && u.peso_alvo) {
+        const diff = Math.abs(u.peso_atual - u.peso_alvo);
+        v('p-pg').textContent  = (u.peso_atual > u.peso_alvo ? '−' : '+') + diff.toFixed(1) + ' kg restantes';
+        v('p-pb').style.width  = '20%';
+      }
+      v('e-nm').value = u.nome          || '';
+      v('e-em').value = u.email         || '';
+      v('e-ns').value = u.data_nasc     || '';
+      v('e-gn').value = u.genero        || 'F';
+      v('e-pe').value = u.peso_atual    || '';
+      v('e-al').value = u.peso_alvo     || '';
+      v('e-at').value = u.altura_cm     || '';
+      v('e-av').value = u.nivel_ativ    || 'light';
+      v('e-rf').value = u.refeicoes_dia || '4';
+      v('e-ag').value = u.meta_agua_l   || 2.5;
+      document.querySelectorAll('.go').forEach(o =>
+        o.classList.toggle('on', o.dataset.g === u.objetivo));
+    } catch(e) {
+      toast('Erro ao carregar perfil: ' + e.message, 'error');
+    }
+  }
+
+  async function save() {
+    const goal = document.querySelector('.go.on')?.dataset.g;
+    if (!goal) { toast('Selecione um objetivo', 'error'); return; }
+    const btn = v('sbtn');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+    try {
+      const pesoVal   = v('e-pe').value;
+      const alturaVal = v('e-at').value;
+      const nascVal   = v('e-ns').value;
+
+      if (!pesoVal)   { toast('Informe seu peso atual.', 'error'); return; }
+      if (!alturaVal) { toast('Informe sua altura.', 'error'); return; }
+
+      const peso   = parseFloat(pesoVal);
+      const altura = parseFloat(alturaVal);
+
+      if (isNaN(peso)   || peso   <= 0) { toast('Informe um peso válido.', 'error');   return; }
+      if (isNaN(altura) || altura <= 0) { toast('Informe uma altura válida.', 'error'); return; }
+      if (peso   < 20  || peso   > 300) { toast('Peso deve ser entre 20kg e 300kg.', 'error');    return; }
+      if (altura < 100 || altura > 300) { toast('Altura deve ser entre 100cm e 300cm.', 'error'); return; }
+
+      if (nascVal) {
+        const nasc  = new Date(nascVal);
+        const hoje  = new Date();
+        const idade = hoje.getFullYear() - nasc.getFullYear()
+          - (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate()) ? 1 : 0);
+        if (idade < 7)   { toast('É necessário ter pelo menos 7 anos.', 'error'); return; }
+        if (idade > 120) { toast('Verifique a data de nascimento.', 'error');     return; }
+      }
+}
+      await PUT(`usuarios/${UID.get()}`, {
+        nome:          v('e-nm').value.trim(),
+        email:         v('e-em').value.trim(),
+        genero:        v('e-gn').value,
+        data_nasc:     v('e-ns').value || null,
+        peso_atual:    parseFloat(v('e-pe').value) || null,
+        peso_alvo:     parseFloat(v('e-al').value) || null,
+        altura_cm:     parseInt(v('e-at').value)   || null,
+        nivel_ativ:    v('e-av').value,
+        refeicoes_dia: parseInt(v('e-rf').value),
+        meta_agua_l:   parseFloat(v('e-ag').value) || 2.5,
+        objetivo:      goal,
+      });
+      sessionStorage.removeItem('sc_user');
+      toast('Perfil atualizado ✅');
+      loadUser();
+    } catch(e) {
+      toast('Erro: ' + e.message, 'error');
+    } finally {
+      btn.textContent = '✅ Salvar Alterações'; btn.disabled = false;
+    }
+  }
+
+  // ── Excluir conta ──────────────────────────────────────────────
+  const deleteSteps = [
+    {
+      emoji: '😱',
+      title: 'Excluir conta?',
+      msg:   'Tem certeza que quer apagar tudo? Suas refeições, histórico e dados serão perdidos para sempre!',
+      cancelTxt:  'Não, me arrependi',
+      confirmTxt: 'Sim, quero excluir',
+    },
+    {
+      emoji: '🥺',
+      title: 'Peraí... você tem certeza mesmo?',
+      msg:   'Olha, você mal começou! Tá desistindo já? Seus dados vão sumir que nem lágrima no chuveiro...',
+      cancelTxt:  'Tá bom, vou ficar',
+      confirmTxt: 'Pode excluir sim',
+    },
+    {
+      emoji: '😤',
+      title: 'Tá bem, mas antes me responde...',
+      msg:   'Você passou horas cadastrando suas refeições e agora vai jogar fora assim? Pensa bem antes de apertar esse botão...',
+      cancelTxt:  'Ok ok, vou ficar 😅',
+      confirmTxt: 'Excluir de uma vez',
+    },
+    {
+      emoji: '🤡',
+      title: 'Última chance, campeão!',
+      msg:   'Tudo bem, eu aceito. Mas saiba que seu histórico calórico vai sentir sua falta. As calorias vão chorar.',
+      cancelTxt:  '😭 Não consigo fazer isso',
+      confirmTxt: '💀 Excluir agora',
+    },
+  ];
+
+  let deleteStep = 0;
+
+  function openDeleteModal() {
+    deleteStep = 0;
+    renderDeleteStep();
+    v('delete-overlay').style.display = 'flex';
+  }
+
+  function closeDeleteModal() {
+    v('delete-overlay').style.display = 'none';
+    deleteStep = 0;
+  }
+
+  function renderDeleteStep() {
+    const s = deleteSteps[deleteStep];
+    v('del-emoji').textContent = s.emoji;
+    v('del-title').textContent = s.title;
+    v('del-msg').textContent   = s.msg;
+
+    // Na última etapa o botão vermelho deleta de verdade
+    const isLastStep = deleteStep === deleteSteps.length - 1;
+
+    v('del-actions').innerHTML = `
+      <button class="delete-btn-cancel" onclick="closeDeleteModal()">${s.cancelTxt}</button>
+      <button class="delete-btn" onclick="${isLastStep ? 'confirmDelete()' : 'nextStep()'}">${s.confirmTxt}</button>
+    `;
+  }
+
+  // Avança para o próximo pop-up de convencimento
+  function nextStep() {
+    deleteStep++;
+    renderDeleteStep();
+  }
+
+  async function confirmDelete() {
+    const btn = document.querySelector('.delete-btn');
+    btn.textContent = 'Excluindo...';
+    btn.disabled    = true;
+    try {
+      await DEL(`usuarios/${UID.get()}`);
+      Auth.clear();
+      toast('Conta excluída. Até a próxima! 👋');
+      setTimeout(() => location.href = '../login.html', 1500);
+    } catch(e) {
+      toast('Erro ao excluir: ' + e.message, 'error');
+      btn.textContent = '💀 Excluir agora';
+      btn.disabled    = false;
+    }
+  }
+
+  // Fecha o modal clicando fora
+  v('delete-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+  });
+
+  scInit('perfil').then(loadUser);
+</script>
+</body>
+</html>

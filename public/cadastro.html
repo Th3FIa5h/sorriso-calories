@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica o tema salvo antes de renderizar a página (evita flash)
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  // Define a data máxima de nascimento (7 anos atrás)
+  const maxNasc = new Date();
+  maxNasc.setFullYear(maxNasc.getFullYear() - 7);
+  document.getElementById('nasc').max = maxNasc.toISOString().split('T')[0];
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro — Sorriso Calories</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center;
+         min-height:100vh; background:var(--gray100); width:100% }
+
+  .auth-card { background:var(--white); border-radius:24px;
+               box-shadow:0 8px 48px rgba(44,106,79,.13);
+               padding:52px 56px; width:560px }
+
+  .auth-logo { text-align:center; margin-bottom:32px }
+  .auth-logo h1 { font-family:var(--fd); font-size:28px;
+                  font-weight:500; color:var(--g700); line-height:1.2 }
+  .auth-logo p  { font-size:13px; color:var(--gray400);
+                  text-transform:uppercase; letter-spacing:.08em; margin-top:4px }
+
+  .auth-title { font-family:var(--fd); font-size:22px; font-weight:400;
+                color:var(--gray800); margin-bottom:6px }
+  .auth-sub   { font-size:14px; color:var(--gray400); margin-bottom:28px }
+
+  .pw-wrap { position:relative }
+  .pw-wrap .inp { padding-right:44px }
+  .pw-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%);
+               background:none; border:none; cursor:pointer;
+               color:var(--gray400); padding:4px; transition:color .18s }
+  .pw-toggle:hover { color:var(--g700) }
+
+  /* Indicador de força da senha */
+  .pw-strength { height:4px; border-radius:99px; margin-top:6px;
+                 background:var(--gray200); overflow:hidden }
+  .pw-strength-bar { height:100%; border-radius:99px;
+                     width:0%; transition:width .3s, background .3s }
+
+  .auth-btn { width:100%; justify-content:center;
+              padding:14px; font-size:15px; margin-top:8px }
+
+  /* Etapas do cadastro */
+  .steps { display:flex; gap:8px; justify-content:center; margin-bottom:28px }
+  .step  { width:32px; height:32px; border-radius:50%; display:flex;
+           align-items:center; justify-content:center; font-size:13px;
+           font-weight:600; background:var(--gray200); color:var(--gray400);
+           transition:all .2s }
+  .step.on  { background:var(--g700); color:var(--white) }
+  .step.done{ background:var(--g100); color:var(--g700) }
+
+  .auth-err  { background:#fde8e8; color:#c0392b; border-radius:var(--rs);
+               padding:12px 16px; font-size:13px; margin-bottom:16px; display:none }
+  .auth-err.show { display:block }
+
+  .auth-link { text-align:center; margin-top:20px;
+               font-size:14px; color:var(--gray400) }
+  .auth-link a { color:var(--g700); font-weight:500; text-decoration:none }
+  .auth-link a:hover { text-decoration:underline }
+
+  /* Cards de seleção de objetivo */
+  .obj-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px }
+  .obj-card { border:2px solid var(--gray200); border-radius:var(--rs);
+              padding:16px 12px; text-align:center; cursor:pointer; transition:all .18s }
+  .obj-card:hover { border-color:var(--g300); background:var(--g50) }
+  .obj-card.on    { border-color:var(--g700); background:var(--g50) }
+  .obj-card.on span { color:var(--g700) }
+  .obj-card span  { font-size:13px; font-weight:600; color:var(--gray800) }
+    
+   /* Requisitos de senha */
+    .pw-req {
+      font-size:12px;
+      color:var(--gray400);
+      transition:color .2s;
+      padding-left:4px;
+    }
+    .pw-req.ok {
+      color:var(--g700);
+    }
+    
+</style>
+</head>
+<body>
+<div class="auth-card">
+
+  <div class="auth-logo">
+    <div style="font-size:40px;margin-bottom:8px">🥗</div>
+    <h1>Sorriso Calories</h1>
+    <p>Nutrição inteligente</p>
+  </div>
+
+  <!-- Indicador de etapas -->
+  <div class="steps">
+    <div class="step on" id="st1">1</div>
+    <div style="flex:1;height:2px;background:var(--gray200);align-self:center"></div>
+    <div class="step" id="st2">2</div>
+    <div style="flex:1;height:2px;background:var(--gray200);align-self:center"></div>
+    <div class="step" id="st3">3</div>
+  </div>
+
+  <div class="auth-err" id="err"></div>
+
+  <!-- ETAPA 1: Dados de acesso -->
+  <div id="s1">
+    <h2 class="auth-title">Criar conta</h2>
+    <p class="auth-sub">Seus dados de acesso</p>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="fg">
+        <label class="lbl">Nome completo *</label>
+        <input class="inp" id="nome" placeholder="Ex: João Silva">
+      </div>
+      <div class="fg">
+        <label class="lbl">E-mail *</label>
+        <input class="inp" id="email" type="email" placeholder="seu@email.com">
+      </div>
+      <div class="fg">
+          <label class="lbl">Senha *</label>
+          <div class="pw-wrap">
+            <input class="inp" id="senha" type="password"
+       			placeholder="Mínimo 8 caracteres" oninput="checkSenha()">
+            <button class="pw-toggle" type="button"
+                    onclick="toggleSenha('senha', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Barra de força -->
+          <div class="pw-strength">
+            <div class="pw-strength-bar" id="pw-bar"></div>
+          </div>
+          <div style="font-size:11px;font-weight:600;margin-top:3px" id="pw-label"></div>
+          <!-- Requisitos de senha -->
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px" id="pw-reqs">
+            <div class="pw-req" id="req-len">  ✗ Mínimo 8 caracteres</div>
+            <div class="pw-req" id="req-upper">✗ Pelo menos 1 letra maiúscula</div>
+            <div class="pw-req" id="req-lower">✗ Pelo menos 1 letra minúscula</div>
+            <div class="pw-req" id="req-num">  ✗ Pelo menos 1 número</div>
+            <div class="pw-req" id="req-spec"> ✗ Pelo menos 1 caractere especial (!@#$%...)</div>
+          </div>
+        </div>
+      <div class="fg">
+        <label class="lbl">Confirmar senha *</label>
+        <div class="pw-wrap">
+          <input class="inp" id="senha2" type="password" placeholder="Repita a senha">
+          <button class="pw-toggle" type="button"
+                  onclick="toggleSenha('senha2', this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn auth-btn" onclick="goStep2()">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ETAPA 2: Dados físicos -->
+  <div id="s2" style="display:none">
+    <h2 class="auth-title">Seus dados</h2>
+    <p class="auth-sub">Para calcular sua meta calórica</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="g2">
+        <div class="fg">
+          <label class="lbl">Sexo biológico</label>
+          <select class="sel" id="genero">
+            <option value="F">Feminino</option>
+            <option value="M">Masculino</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="lbl">Data de nascimento</label>
+          <input class="inp" id="nasc" type="date" id="nasc"
+         	max="" id="nasc-input">
+        </div>
+        <div class="fg">
+          <label class="lbl">Peso atual (kg)</label>
+          <input class="inp" id="peso" type="number" placeholder="70" step="0.1">
+        </div>
+        <div class="fg">
+          <label class="lbl">Altura (cm)</label>
+          <input class="inp" id="altura" type="number" placeholder="170">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Nível de atividade</label>
+        <select class="sel" id="ativ">
+          <option value="sedentary">Sedentário (sem exercício)</option>
+          <option value="light" selected>Levemente ativo (1–3x/sem)</option>
+          <option value="moderate">Moderadamente ativo (3–5x/sem)</option>
+          <option value="active">Muito ativo (6–7x/sem)</option>
+          <option value="extra">Extremamente ativo</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn-o" style="flex:1;justify-content:center;padding:13px"
+                onclick="goStep(1)">← Voltar</button>
+        <button class="btn" style="flex:2;justify-content:center;padding:13px"
+                onclick="goStep3()">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETAPA 3: Objetivo -->
+  <div id="s3" style="display:none">
+    <h2 class="auth-title">Seu objetivo</h2>
+    <p class="auth-sub">Vamos personalizar sua meta calórica</p>
+    <div class="obj-grid">
+      <div class="obj-card on" data-g="loss" onclick="pickObj(this)">
+        <div style="font-size:28px;margin-bottom:8px">⚖️</div>
+        <span>Perda de Peso</span>
+        <div style="font-size:11px;color:var(--gray400);margin-top:4px">Déficit calórico</div>
+      </div>
+      <div class="obj-card" data-g="maintain" onclick="pickObj(this)">
+        <div style="font-size:28px;margin-bottom:8px">🔄</div>
+        <span>Manutenção</span>
+        <div style="font-size:11px;color:var(--gray400);margin-top:4px">Equilíbrio</div>
+      </div>
+      <div class="obj-card" data-g="gain" onclick="pickObj(this)">
+        <div style="font-size:28px;margin-bottom:8px">💪</div>
+        <span>Ganho de Massa</span>
+        <div style="font-size:11px;color:var(--gray400);margin-top:4px">Superávit</div>
+      </div>
+    </div>
+
+    <!-- Preview da meta calculada -->
+    <div id="meta-box"
+         style="margin-top:20px;padding:18px;background:var(--g50);
+                border-radius:var(--rs);text-align:center;display:none">
+      <div style="font-family:var(--fd);font-size:40px;color:var(--g700)"
+           id="meta-val">—</div>
+      <div style="font-size:12px;color:var(--gray400);margin-top:4px">
+        kcal/dia estimado
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-o" style="flex:1;justify-content:center;padding:13px"
+              onclick="goStep(2)">← Voltar</button>
+      <button class="btn" style="flex:2;justify-content:center;padding:14px;font-size:15px"
+              id="btn-cad" onclick="cadastrar()">Criar Conta 🎉</button>
+    </div>
+  </div>
+
+  <div class="auth-link">
+    Já tem conta? <a href="login.html">Entrar</a>
+  </div>
+</div>
+
+<script>
+  const BASE = '/sorriso-calories/api';
+
+  // Se já está logado, vai para o dashboard
+  if (localStorage.getItem('sc_token')) location.href = 'index.html';
+
+  let objetivo = 'loss';
+
+  // Navega entre as etapas
+  function goStep(n) {
+    [1,2,3].forEach(i => {
+      document.getElementById(`s${i}`).style.display = i === n ? '' : 'none';
+      const st = document.getElementById(`st${i}`);
+      st.className = 'step' + (i === n ? ' on' : i < n ? ' done' : '');
+    });
+    document.getElementById('err').classList.remove('show');
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('err');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  // Mostra ou esconde senha
+  function toggleSenha(id, btn) {
+    const input = document.getElementById(id);
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerHTML = isPass
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }
+
+  // Indicador de força da senha
+  function checkSenha() {
+      const s    = document.getElementById('senha').value;
+      const nome = document.getElementById('nome').value.toLowerCase().trim();
+
+      // Verifica cada requisito obrigatório
+      const reqs = {
+        'req-len':   s.length >= 8,
+        'req-upper': /[A-Z]/.test(s),
+        'req-lower': /[a-z]/.test(s),
+        'req-num':   /[0-9]/.test(s),
+        'req-spec':  /[^A-Za-z0-9]/.test(s),
+      };
+      const labels = {
+        'req-len':   'Mínimo 8 caracteres',
+        'req-upper': 'Pelo menos 1 letra maiúscula',
+        'req-lower': 'Pelo menos 1 letra minúscula',
+        'req-num':   'Pelo menos 1 número',
+        'req-spec':  'Pelo menos 1 caractere especial (!@#$%...)',
+      };
+
+      let requisitosOk = 0;
+      for (const [id, passed] of Object.entries(reqs)) {
+        const el = document.getElementById(id);
+        el.textContent = (passed ? '✓ ' : '✗ ') + labels[id];
+        el.classList.toggle('ok', passed);
+        if (passed) requisitosOk++;
+      }
+
+      const bar   = document.getElementById('pw-bar');
+      const label = document.getElementById('pw-label');
+
+      if (s.length === 0) {
+        bar.style.width = '0%'; label.textContent = ''; return;
+      }
+
+      // ── Algoritmo de força ─────────────────────────────────────
+      let pontos = 0;
+
+      // Base: cada requisito vale 1 ponto
+      pontos += requisitosOk;
+
+      // Bônus por tamanho
+      if (s.length >= 12) pontos++;
+      if (s.length >= 16) pontos++;
+
+      // Bônus por múltiplos caracteres especiais
+      if ((s.match(/[^A-Za-z0-9]/g) || []).length >= 2) pontos++;
+
+      // ── Penalidades ────────────────────────────────────────────
+
+      // Penaliza senha curta independente dos tipos (ex: "Mm@1" = fraca)
+      if (s.length < 10) pontos = Math.min(pontos, 2);
+
+      // Penaliza sequências numéricas óbvias
+      const seqNumericas = ['12345678','87654321','11111111','00000000','99999999'];
+      if (seqNumericas.some(seq => s.includes(seq))) pontos -= 3;
+
+      // Penaliza sequências de teclado
+      const seqTeclado = ['qwertyui','asdfghjk','zxcvbnm','qwerty','asdf'];
+      if (seqTeclado.some(seq => s.toLowerCase().includes(seq))) pontos -= 2;
+
+      // Penaliza senhas comuns
+      const senhasComuns = ['password','senha123','admin123','brasil','futebol','123mudar'];
+      if (senhasComuns.some(s2 => s.toLowerCase().includes(s2))) pontos -= 3;
+
+      // Penaliza repetição excessiva (ex: "aaaa", "1111")
+      if (/(.)\1{3,}/.test(s)) pontos -= 2;
+
+      // Penaliza se contém o nome ou partes do nome (mínimo 3 letras)
+      if (nome.length >= 3) {
+        const partes = nome.split(' ').filter(p => p.length >= 3);
+        if (partes.some(parte => s.toLowerCase().includes(parte))) {
+          pontos -= 3;
+        }
+      }
+
+      // Garante entre 0 e 8
+      pontos = Math.max(0, Math.min(8, pontos));
+
+      // Define nível
+      let cor, texto;
+      if (pontos <= 2) {
+        cor = '#e05252'; texto = '😬 Fraca — fácil de adivinhar';
+      } else if (pontos <= 4) {
+        cor = '#e8a838'; texto = '😐 Razoável — pode melhorar';
+      } else if (pontos <= 6) {
+        cor = '#52b788'; texto = '😊 Boa — bem protegida';
+      } else {
+        cor = '#2d6a4f'; texto = '💪 Bizarra — essa senha é uma fortaleza!';
+      }
+
+      const largura = Math.max(10, Math.min(100, pontos * 12.5));
+      bar.style.width      = largura + '%';
+      bar.style.background = cor;
+      label.style.color    = cor;
+      label.textContent    = texto;
+    }
+
+  // Validação e avanço para etapa 2
+    function goStep2() {
+      const nome   = document.getElementById('nome').value.trim();
+      const email  = document.getElementById('email').value.trim();
+      const senha  = document.getElementById('senha').value;
+      const senha2 = document.getElementById('senha2').value;
+
+      if (!nome) return showErr('Informe seu nome.');
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email)                  return showErr('Informe seu e-mail.');
+      if (!emailRegex.test(email)) return showErr('Email inválido. Use um formato como: nome@exemplo.com');
+
+      if (senha.length < 8)                return showErr('A senha deve ter pelo menos 8 caracteres.');
+      if (!/[A-Z]/.test(senha))            return showErr('A senha deve ter pelo menos 1 letra maiúscula.');
+      if (!/[a-z]/.test(senha))            return showErr('A senha deve ter pelo menos 1 letra minúscula.');
+      if (!/[0-9]/.test(senha))            return showErr('A senha deve ter pelo menos 1 número.');
+      if (!/[^A-Za-z0-9]/.test(senha))     return showErr('A senha deve ter pelo menos 1 caractere especial.');
+      if (senha !== senha2)                return showErr('As senhas não coincidem.');
+
+      goStep(2);
+    }
+
+  // Avança para etapa 3 e calcula preview da meta
+  function goStep3() {
+      const pesoVal   = document.getElementById('peso').value;
+      const alturaVal = document.getElementById('altura').value;
+      const nascVal   = document.getElementById('nasc').value;
+
+      // Campos obrigatórios
+      if (!pesoVal)   return showErr('Informe seu peso atual.');
+      if (!alturaVal) return showErr('Informe sua altura.');
+      if (!nascVal)   return showErr('Informe sua data de nascimento.');
+
+      const peso   = parseFloat(pesoVal);
+      const altura = parseFloat(alturaVal);
+
+      // Validação de peso
+      if (isNaN(peso) || peso <= 0)          return showErr('Informe um peso válido.');
+      if (peso < 20 || peso > 300)           return showErr('Peso deve ser entre 20kg e 300kg.');
+
+      // Validação de altura
+      if (isNaN(altura) || altura <= 0)      return showErr('Informe uma altura válida.');
+      if (altura < 100 || altura > 300)      return showErr('Altura deve ser entre 100cm e 300cm.');
+
+      // Validação de idade mínima (7 anos)
+      const nasc  = new Date(nascVal);
+      const hoje  = new Date();
+      const idade = hoje.getFullYear() - nasc.getFullYear()
+        - (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate()) ? 1 : 0);
+
+      if (idade < 7)  return showErr('É necessário ter pelo menos 7 anos para se cadastrar.');
+      if (idade > 120) return showErr('Verifique a data de nascimento informada.');
+
+      goStep(3);
+      calcMeta();
+    }
+
+  // Seleciona o objetivo e recalcula o preview
+  function pickObj(el) {
+    document.querySelectorAll('.obj-card').forEach(o => {
+      o.classList.remove('on');
+      o.querySelector('span').style.color = '';
+    });
+    el.classList.add('on');
+    objetivo = el.dataset.g;
+    calcMeta();
+  }
+
+  // Calcula preview da meta calórica no frontend (mesmo cálculo do backend)
+  function calcMeta() {
+    const w   = parseFloat(document.getElementById('peso').value)   || 70;
+    const h   = parseFloat(document.getElementById('altura').value) || 170;
+    const nasc= document.getElementById('nasc').value;
+    const g   = document.getElementById('genero').value;
+    const fac = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, extra:1.9 };
+    const fat = fac[document.getElementById('ativ').value] || 1.375;
+    const age = nasc ? Math.floor((Date.now() - new Date(nasc)) / 31557600000) : 30;
+    const bmr = g === 'M'
+      ? 10*w + 6.25*h - 5*age + 5
+      : 10*w + 6.25*h - 5*age - 161;
+    const tdee = bmr * fat;
+    const kcal = Math.round(objetivo === 'loss' ? tdee-400 : objetivo === 'gain' ? tdee+300 : tdee);
+    document.getElementById('meta-box').style.display = '';
+    document.getElementById('meta-val').textContent = kcal.toLocaleString('pt-BR');
+  }
+
+  // Envia o cadastro para a API
+  async function cadastrar() {
+    const btn = document.getElementById('btn-cad');
+    btn.textContent = 'Criando conta...';
+    btn.disabled    = true;
+
+    try {
+      const res = await fetch(`${BASE}/auth/cadastro`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome:      document.getElementById('nome').value.trim(),
+          email:     document.getElementById('email').value.trim(),
+          senha:     document.getElementById('senha').value,
+          genero:    document.getElementById('genero').value,
+          data_nasc: document.getElementById('nasc').value    || null,
+          peso_atual:parseFloat(document.getElementById('peso').value)   || null,
+          altura_cm: parseInt(document.getElementById('altura').value)   || null,
+          nivel_ativ:document.getElementById('ativ').value,
+          objetivo,
+        }),
+      });
+      const d = await res.json();
+      console.log('Resposta da API:', d);
+      console.log('Email enviado:', d.email_enviado);
+      console.log('Brevo key set:', d.brevo_key_set);
+      console.log('Brevo key preview:', d.brevo_key_preview);
+      console.log('Sender email:', d.sender_email);
+
+      if (!res.ok) {
+        showErr(d.error || 'Erro ao criar conta.');
+        return;
+      }
+
+      // Não loga automaticamente — precisa confirmar o email primeiro
+      // Mostra mensagem de sucesso na etapa 3
+      document.getElementById('btn-cad').style.display = 'none';
+      document.querySelector('.obj-grid').style.display = 'none';
+      if (document.getElementById('meta-box'))
+        document.getElementById('meta-box').style.display = 'none';
+
+      document.getElementById('ob-s3')?.style;
+
+      // Substitui o conteúdo da etapa 3 por mensagem de sucesso
+      document.getElementById('s3').innerHTML = `
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:64px;margin-bottom:16px">📧</div>
+          <h3 style="font-family:var(--fd);font-size:22px;font-weight:400;
+                    color:var(--gray800);margin-bottom:10px">
+            Verifique seu email!
+          </h3>
+          <p style="font-size:15px;color:var(--gray600);line-height:1.6;margin-bottom:24px">
+            Enviamos um link de confirmação para<br>
+            <strong>${document.getElementById('email').value.trim()}</strong>
+          </p>
+          <p style="font-size:13px;color:var(--gray400)">
+            Clique no link do email para ativar sua conta.<br>
+            Verifique também a pasta de spam.
+          </p>
+          <a href="login.html" class="btn"
+            style="display:inline-flex;margin-top:24px">
+            Ir para o login
+          </a>
+        </div>
+      `;
+
+    } catch(e) {
+      showErr('Erro de conexão. Verifique se o servidor está rodando.');
+    } finally {
+      btn.textContent = 'Criar Conta 🎉';
+      btn.disabled    = false;
+    }
+  }
+</script>
+<!-- Botão de tema no canto superior direito -->
+<button onclick="toggleTema()"
+  style="position:fixed;top:20px;right:20px;background:var(--white);
+         border:1.5px solid var(--gray200);border-radius:99px;
+         padding:8px 16px;font-family:var(--fb);font-size:13px;
+         color:var(--gray600);cursor:pointer;transition:all .18s;
+         display:flex;align-items:center;gap:8px;box-shadow:var(--sh)"
+  id="tema-btn">
+  🌙 Tema escuro
+</button>
+
+<script>
+  // Aplica o tema salvo ao carregar
+  function aplicarTema() {
+    const tema = localStorage.getItem('sc_tema') || 'light';
+    if (tema === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('tema-btn').textContent = '☀️ Tema claro';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('tema-btn').textContent = '🌙 Tema escuro';
+    }
+  }
+
+  function toggleTema() {
+    const atual = localStorage.getItem('sc_tema') || 'light';
+    const novo  = atual === 'light' ? 'dark' : 'light';
+    localStorage.setItem('sc_tema', novo);
+    aplicarTema();
+  }
+
+  aplicarTema();
+</script>
+</body>
+</html>

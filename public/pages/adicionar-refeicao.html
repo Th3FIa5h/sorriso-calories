@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica o tipo selecionado ANTES da página renderizar (zero delay)
+  document.addEventListener('DOMContentLoaded', () => {
+    const tipo = new URLSearchParams(window.location.search).get('tipo');
+    if (tipo) {
+      document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
+      const el = document.querySelector(`.mo[data-t="${tipo}"]`);
+      if (el) el.classList.add('on');
+    }
+  });
+</script>
+<script>
+  // Aplica o tema salvo antes de renderizar a página (evita flash)
+  const _t = localStorage.getItem('sc_tema');
+  if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adicionar Refeição — Sorriso Calories</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+  .al  { display:grid; grid-template-columns:1fr 420px; gap:28px }
+  /* Opções de tipo de refeição */
+  .mg  { display:grid; grid-template-columns:repeat(4,1fr); gap:12px }
+  /* Esconde todas as opções de tipo inicialmente para evitar flash */
+  .mo  { border:2px solid var(--gray200); border-radius:var(--rs); padding:16px 12px;
+       	text-align:center; cursor:pointer; transition:all .18s }
+  /* Esconde todas as opções de tipo inicialmente para evitar flash */
+  .mo { display:flex; flex-direction:column; align-items:center }
+  .mo:hover { border-color:var(--g300); background:var(--g50) }
+  .mo.on    { border-color:var(--g700); background:var(--g50) }
+  .mo.on .ml2 { color:var(--g700) }
+  .ml2 { font-size:13px; font-weight:600; color:var(--gray800) }
+  /* Campo de busca com ícone */
+  .sw  { position:relative }
+  .sw svg { position:absolute; left:16px; top:50%; transform:translateY(-50%) }
+  .spl { padding-left:46px !important }
+  /* Resultados da busca */
+  .fri { display:flex; align-items:center; gap:14px; padding:11px 14px;
+         border-radius:var(--rs); border:1.5px solid var(--gray200);
+         cursor:pointer; transition:all .18s; margin-bottom:6px }
+  .fri:hover { border-color:var(--g500); background:var(--g50) }
+  .fadd { font-size:12px; font-weight:600; color:var(--g700); background:var(--g100);
+          border:none; padding:6px 14px; border-radius:99px; cursor:pointer;
+          transition:all .18s; white-space:nowrap }
+  .fadd:hover { background:var(--g700); color:var(--white) }
+  /* Item adicionado à refeição */
+  .ai  { display:flex; align-items:center; gap:12px; padding:11px 14px;
+         background:var(--gray100); border-radius:var(--rs); margin-bottom:6px }
+  .arm { width:24px; height:24px; border-radius:50%; border:none; background:var(--gray200);
+         color:var(--gray600); font-size:14px; cursor:pointer;
+         display:flex; align-items:center; justify-content:center;
+         transition:all .18s; margin-left:4px }
+  .arm:hover { background:#fde8e8; color:#c0392b }
+  /* Preview de kcal no painel lateral */
+  .pvb { background:var(--g50); border-radius:var(--rs); padding:20px; text-align:center }
+  .pvm { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px }
+  .pmi { background:var(--white); border-radius:var(--rs); padding:12px; text-align:center }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sidebar-root"></div>
+  <main class="main">
+    <div class="ph">
+      <div><h2>Adicionar Refeição</h2><p>Registre o que você comeu</p></div>
+      <a href="refeicoes.html" class="btn-g">← Voltar</a>
+    </div>
+    <div class="ca">
+      <div class="al">
+
+        <!-- Coluna principal: formulário -->
+        <div style="display:flex;flex-direction:column;gap:22px">
+
+          <!-- Tipo de refeição e horário -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:14px">Tipo de Refeição</div>
+            <div class="mg">
+              <div class="mo on" data-t="cafe" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">☀️</div><div class="ml2">Café da Manhã</div></div>
+              <div class="mo" data-t="almoco" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">🍽️</div><div class="ml2">Almoço</div></div>
+              <div class="mo" data-t="lanche_tarde" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">🍎</div><div class="ml2">Lanche</div></div>
+              <div class="mo" data-t="jantar" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">🌙</div><div class="ml2">Jantar</div></div>
+            </div>
+            <div class="g2" style="margin-top:16px">
+              <div class="fg"><label class="lbl">Data</label><input class="inp" type="date" id="mdata"></div>
+              <div class="fg"><label class="lbl">Horário</label><input class="inp" type="time" id="mhora"></div>
+            </div>
+          </div>
+
+          <!-- Busca de alimentos com debounce -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:14px">Buscar Alimentos</div>
+            <div class="sw">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray400)" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input class="inp spl" id="fsearch" type="text" placeholder="Digite o nome do alimento...">
+            </div>
+            <div id="fresults" style="margin-top:10px"></div>
+          </div>
+
+          <!-- Lista de alimentos adicionados à refeição -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="ct">Alimentos desta Refeição</div>
+              <span id="icount" style="font-size:13px;color:var(--gray400)">0 itens</span>
+            </div>
+            <div id="ilist">
+              <p style="font-size:13px;color:var(--gray400);text-align:center;padding:20px 0">
+                Nenhum alimento ainda. Use a busca acima ☝️
+              </p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="ct" style="margin-bottom:10px">Observações</div>
+            <textarea class="inp" id="mobs" rows="3"
+              placeholder="Ex: refeição pré-treino, restaurante X..." style="resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <!-- Coluna lateral: preview e saldo do dia -->
+        <div style="position:sticky;top:24px;align-self:flex-start;display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="ct" style="margin-bottom:14px">Resumo da Refeição</div>
+            <div class="pvb">
+              <div style="font-family:var(--fd);font-size:48px;color:var(--g700);line-height:1" id="pv-k">0</div>
+              <div style="font-size:12px;color:var(--gray400);text-transform:uppercase;letter-spacing:.06em;margin-top:4px">kcal total</div>
+            </div>
+            <div class="pvm">
+              <div class="pmi"><div style="font-size:18px;font-weight:600" id="pv-p">0g</div><div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Proteína</div></div>
+              <div class="pmi"><div style="font-size:18px;font-weight:600" id="pv-c">0g</div><div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Carb.</div></div>
+              <div class="pmi"><div style="font-size:18px;font-weight:600" id="pv-f">0g</div><div style="font-size:11px;color:var(--gray400);text-transform:uppercase;margin-top:2px">Gordura</div></div>
+            </div>
+          </div>
+
+          <!-- Saldo calórico do dia incluindo esta refeição -->
+          <div class="card">
+            <div class="ct" style="margin-bottom:12px">Saldo do Dia</div>
+            <div class="row"><span style="font-size:13px;color:var(--gray600)">Consumido hoje</span><span style="font-size:13px;font-weight:600" id="dy-c">— kcal</span></div>
+            <div class="row"><span style="font-size:13px;color:var(--gray600)">Esta refeição</span><span style="font-size:13px;font-weight:600;color:var(--g700)" id="dy-t">+ 0 kcal</span></div>
+            <div class="mb" style="height:10px;margin:12px 0 6px">
+              <div class="mf" id="dy-bar" style="width:0%;background:var(--g500)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;color:var(--gray400)" id="dy-pct">0%</span>
+              <span style="font-size:12px;color:var(--gray400)" id="dy-meta">Meta: —</span>
+            </div>
+          </div>
+
+          <button class="btn" style="width:100%;justify-content:center;padding:15px;font-size:15px"
+                  id="sbtn" onclick="save()">✅ Salvar Refeição</button>
+          <a href="refeicoes.html" class="btn-o" style="width:100%;justify-content:center">Cancelar</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let added   = [];   // alimentos adicionados à refeição
+  let dayKcal = 0;    // kcal já consumidas hoje (sem esta refeição)
+  let dayMeta = 1800; // meta calórica do usuário
+  let timer;          // timer para debounce da busca
+
+    async function init() {
+        const now = new Date();
+        document.getElementById('mdata').value = now.toISOString().split('T')[0];
+        document.getElementById('mhora').value = now.toTimeString().slice(0, 5);
+
+        // Aplica o tipo IMEDIATAMENTE antes de qualquer outra coisa
+        const params = new URLSearchParams(window.location.search);
+        const tipo   = params.get('tipo');
+        if (tipo) {
+            // Remove 'on' de todos e marca o correto
+            document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
+            const el = document.querySelector(`.mo[data-t="${tipo}"]`);
+            if (el) el.classList.add('on');
+        }
+
+        try {
+            const d = await GET('dashboard', { usuario_id: UID.get() });
+            dayKcal = Math.round(d.hoje.kcal);
+            dayMeta = d.hoje.meta_kcal;
+            document.getElementById('dy-c').textContent    = dayKcal.toLocaleString('pt-BR') + ' kcal';
+            document.getElementById('dy-meta').textContent = 'Meta: ' + dayMeta.toLocaleString('pt-BR');
+            updateBar();
+        } catch(e) {}
+    }
+
+  // Seleciona o tipo de refeição
+  function pickTipo(el) {
+    document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  // Busca alimentos com debounce de 300ms
+  document.getElementById('fsearch').addEventListener('input', function() {
+    clearTimeout(timer);
+    if (this.value.length < 2) { document.getElementById('fresults').innerHTML = ''; return; }
+    timer = setTimeout(() => search(this.value), 300);
+  });
+
+  async function search(q) {
+    const d = await GET('alimentos', { q, limit: 7 });
+    document.getElementById('fresults').innerHTML = d.data.length
+      ? d.data.map(f => `
+          <div class="fri">
+            <div style="font-size:20px">${f.emoji}</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:500">${f.nome}</div>
+              <div style="font-size:12px;color:var(--gray400);margin-top:2px">
+                Por ${f.porcao_g}${f.unidade} · ${f.kcal} kcal
+              </div>
+            </div>
+            <button class="fadd" onclick='addFood(${JSON.stringify(f)})'>+ Adicionar</button>
+          </div>`).join('')
+      : `<p style="font-size:13px;color:var(--gray400);padding:8px 0">
+           Sem resultados.
+           <a href="cadastro-alimento.html" style="color:var(--g700)">Cadastrar →</a>
+         </p>`;
+  }
+
+  // Solicita a quantidade e adiciona o alimento à lista
+  function addFood(f) {
+    const qty = parseFloat(prompt(`Quantidade de "${f.nome}" em gramas (padrão: ${f.porcao_g}g):`, f.porcao_g));
+    if (isNaN(qty) || qty <= 0) return;
+    const m = qty / parseFloat(f.porcao_g);
+    added.push({
+      alimento_id: f.id, nome: f.nome, emoji: f.emoji,
+      quantidade_g: qty,
+      kcal:       Math.round(f.kcal * m),
+      proteina_g: parseFloat((f.proteina_g * m).toFixed(1)),
+      carb_g:     parseFloat((f.carb_g * m).toFixed(1)),
+      gordura_g:  parseFloat((f.gordura_g * m).toFixed(1)),
+    });
+    document.getElementById('fsearch').value = '';
+    document.getElementById('fresults').innerHTML = '';
+    render();
+  }
+
+  function rmAdded(i) { added.splice(i, 1); render(); }
+
+  // Renderiza a lista de alimentos e atualiza o preview
+  function render() {
+    document.getElementById('icount').textContent = added.length + ' itens';
+    document.getElementById('ilist').innerHTML = added.length
+      ? added.map((f, i) => `
+          <div class="ai">
+            <span style="font-size:20px">${f.emoji}</span>
+            <span style="flex:1;font-size:14px;font-weight:500">${f.nome}</span>
+            <span style="font-size:13px;color:var(--gray400)">${f.quantidade_g}g</span>
+            <span style="font-size:14px;font-weight:600;color:var(--g700);margin:0 8px">${f.kcal} kcal</span>
+            <button class="arm" onclick="rmAdded(${i})">×</button>
+          </div>`).join('')
+      : '<p style="font-size:13px;color:var(--gray400);text-align:center;padding:16px 0">Nenhum alimento. Use a busca ☝️</p>';
+
+    // Calcula totais da refeição
+    const tk = added.reduce((s, f) => s + f.kcal,       0);
+    const tp = added.reduce((s, f) => s + f.proteina_g, 0).toFixed(1);
+    const tc = added.reduce((s, f) => s + f.carb_g,     0).toFixed(1);
+    const tf = added.reduce((s, f) => s + f.gordura_g,  0).toFixed(1);
+
+    document.getElementById('pv-k').textContent = tk;
+    document.getElementById('pv-p').textContent = tp + 'g';
+    document.getElementById('pv-c').textContent = tc + 'g';
+    document.getElementById('pv-f').textContent = tf + 'g';
+    document.getElementById('dy-t').textContent = '+' + tk + ' kcal';
+    updateBar(tk);
+  }
+
+  // Atualiza a barra de progresso do dia
+  function updateBar(extra = 0) {
+    const total = dayKcal + extra;
+    const pct   = dayMeta > 0 ? Math.min(100, Math.round(total / dayMeta * 100)) : 0;
+    document.getElementById('dy-bar').style.width  = pct + '%';
+    document.getElementById('dy-pct').textContent  = pct + '% da meta';
+    document.getElementById('dy-c').textContent    = total.toLocaleString('pt-BR') + ' kcal';
+  }
+
+  // Salva a refeição no banco via API
+  async function save() {
+    if (!added.length) { toast('Adicione ao menos um alimento', 'error'); return; }
+    const btn = document.getElementById('sbtn');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+    try {
+      await POST('refeicoes', {
+        usuario_id: UID.get(),
+        tipo:       document.querySelector('.mo.on').dataset.t,
+        data_ref:   document.getElementById('mdata').value,
+        hora_ref:   document.getElementById('mhora').value + ':00',
+        obs:        document.getElementById('mobs').value,
+        itens:      added.map(f => ({ alimento_id: f.alimento_id, quantidade_g: f.quantidade_g })),
+      });
+      toast('Refeição salva ✅');
+      setTimeout(() => location.href = 'refeicoes.html', 900);
+    } catch(e) {
+      toast(e.message, 'error');
+      btn.textContent = '✅ Salvar Refeição'; btn.disabled = false;
+    }
+  }
+
+  scInit('adicionar-refeicao').then(init);
+</script>
+</body>
+</html>

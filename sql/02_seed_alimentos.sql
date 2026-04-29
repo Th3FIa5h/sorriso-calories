@@ -1,0 +1,148 @@
+-- ═══════════════════════════════════════════════════════════════
+--  Sorriso Calories — Seed de Alimentos (Tabela TACO / IBGE)
+--  ~150 alimentos brasileiros com dados nutricionais reais
+-- ═══════════════════════════════════════════════════════════════
+USE sorriso_calories;
+
+INSERT IGNORE INTO alimentos
+  (nome, descricao, categoria, emoji, porcao_g, unidade, kcal, proteina_g, carb_g, gordura_g, gord_sat_g, fibra_g, acucar_g, sodio_mg, fonte)
+VALUES
+-- PROTEÍNAS ANIMAIS
+('Frango, peito, grelhado','Sem pele, sem osso','Proteína','🍗',100,'g',159,32.0,0.0,2.7,0.7,0.0,0.0,59,'TACO'),
+('Frango, coxa, assada','Sem pele','Proteína','🍗',100,'g',167,25.5,0.0,6.5,1.8,0.0,0.0,72,'TACO'),
+('Frango, filé, frito','Em óleo','Proteína','🍗',100,'g',242,28.1,3.8,12.5,2.6,0.0,0.0,71,'TACO'),
+('Bife bovino, patinho, grelhado','Sem gordura','Proteína','🥩',100,'g',219,32.7,0.0,10.0,4.1,0.0,0.0,54,'TACO'),
+('Carne bovina, alcatra, grelhada','Sem gordura','Proteína','🥩',100,'g',183,29.0,0.0,7.0,2.9,0.0,0.0,49,'TACO'),
+('Carne bovina, contrafilé, grelhado','','Proteína','🥩',100,'g',218,27.4,0.0,12.0,4.8,0.0,0.0,52,'TACO'),
+('Carne bovina, acém, cozido','Sem osso','Proteína','🥩',100,'g',226,28.5,0.0,12.5,5.0,0.0,0.0,57,'TACO'),
+('Carne bovina, músculo, cozido','Sem osso','Proteína','🥩',100,'g',219,32.4,0.0,9.7,3.8,0.0,0.0,62,'TACO'),
+('Carne bovina, fígado, frito','Em óleo','Proteína','🥩',100,'g',217,26.0,4.8,10.0,3.5,0.0,0.0,76,'TACO'),
+('Carne suína, lombo, assado','Sem gordura','Proteína','🥩',100,'g',200,29.5,0.0,8.7,3.1,0.0,0.0,54,'TACO'),
+('Carne suína, costela, assada','Com osso','Proteína','🥩',100,'g',302,22.8,0.0,23.3,8.6,0.0,0.0,72,'TACO'),
+('Linguiça de porco, frita','Tipo toscana','Proteína','🌭',100,'g',337,16.8,2.0,29.5,10.8,0.0,0.0,742,'TACO'),
+('Salsicha, cozida','Tipo hot-dog','Proteína','🌭',100,'g',226,12.3,3.1,18.9,7.4,0.0,0.0,730,'TACO'),
+('Atum, enlatado, em água','Escorrido','Proteína','🐟',100,'g',119,26.0,0.0,0.8,0.2,0.0,0.0,316,'TACO'),
+('Sardinha, enlatada, em óleo','Escorrida','Proteína','🐟',100,'g',229,24.0,0.0,14.6,3.6,0.0,0.0,430,'TACO'),
+('Salmão, grelhado','Filé sem pele','Proteína','🐟',100,'g',208,27.3,0.0,10.9,2.3,0.0,0.0,59,'TACO'),
+('Tilápia, filé, cozido','Sem pele','Proteína','🐟',100,'g',128,26.2,0.0,2.3,0.7,0.0,0.0,52,'TACO'),
+('Bacalhau, dessalgado, cozido','Sem osso','Proteína','🐟',100,'g',119,26.0,0.0,0.5,0.1,0.0,0.0,207,'TACO'),
+('Camarão, cozido','Sem casca','Proteína','🦐',100,'g',99,20.3,0.6,1.3,0.3,0.0,0.0,225,'TACO'),
+('Ovo, galinha, cozido','Inteiro','Proteína','🥚',50,'un',77,6.3,0.6,5.3,1.6,0.0,0.0,70,'TACO'),
+('Ovo, galinha, frito','Em manteiga','Proteína','🍳',50,'un',89,6.0,0.3,7.0,2.5,0.0,0.0,93,'TACO'),
+('Ovo, clara, cozida','Sem gema','Proteína','🥚',50,'un',26,5.4,0.4,0.0,0.0,0.0,0.0,81,'TACO'),
+-- LATICÍNIOS
+('Leite, vaca, integral','Pasteurizado','Laticínio','🥛',200,'ml',122,6.4,9.2,6.4,4.0,0.0,9.2,102,'TACO'),
+('Leite, vaca, desnatado','Pasteurizado','Laticínio','🥛',200,'ml',68,6.6,9.4,0.2,0.1,0.0,9.4,103,'TACO'),
+('Iogurte, natural, integral','Sem açúcar','Laticínio','🥛',170,'g',102,5.9,8.1,4.8,3.0,0.0,8.1,75,'TACO'),
+('Iogurte, natural, desnatado','Sem açúcar','Laticínio','🥛',170,'g',85,8.9,11.7,0.2,0.1,0.0,11.7,92,'TACO'),
+('Iogurte grego, integral','Sem açúcar','Laticínio','🥛',100,'g',97,5.7,3.6,7.5,4.7,0.0,3.6,47,'TACO'),
+('Queijo, minas frescal','Sem sal','Laticínio','🧀',50,'g',97,6.6,0.5,7.5,4.7,0.0,0.5,184,'TACO'),
+('Queijo, mussarela','Fatiado','Laticínio','🧀',30,'g',78,5.6,0.4,6.1,3.9,0.0,0.4,175,'TACO'),
+('Queijo, prato','Fatiado','Laticínio','🧀',30,'g',93,6.2,0.1,7.4,4.7,0.0,0.1,208,'TACO'),
+('Queijo, cottage','Cremoso','Laticínio','🧀',100,'g',98,12.4,3.4,4.3,2.7,0.0,1.8,364,'TACO'),
+('Requeijão, cremoso','','Laticínio','🧀',30,'col',68,1.8,1.4,6.3,4.0,0.0,0.8,217,'TACO'),
+('Manteiga, com sal','','Gordura','🧈',10,'col',72,0.1,0.0,8.0,5.2,0.0,0.0,82,'TACO'),
+-- CEREAIS / ARROZ / MASSAS
+('Arroz, branco, cozido','Cozido em água','Carboidrato','🍚',125,'g',128,2.5,28.1,0.2,0.1,0.7,0.0,1,'TACO'),
+('Arroz, integral, cozido','Cozido em água','Carboidrato','🍚',125,'g',124,2.6,25.8,1.0,0.2,1.8,0.0,1,'TACO'),
+('Arroz, parboilizado, cozido','Cozido em água','Carboidrato','🍚',125,'g',143,2.9,30.6,0.5,0.1,0.8,0.0,1,'TACO'),
+('Macarrão, espaguete, cozido','Al dente','Carboidrato','🍝',100,'g',137,5.0,26.9,0.8,0.1,1.5,0.0,2,'TACO'),
+('Macarrão, parafuso, cozido','Al dente','Carboidrato','🍝',100,'g',135,4.9,26.5,0.7,0.1,1.4,0.0,2,'TACO'),
+('Pão, francês','1 unidade','Carboidrato','🍞',50,'un',134,4.0,26.5,0.8,0.1,1.1,1.5,270,'TACO'),
+('Pão, de forma, integral','1 fatia','Carboidrato','🍞',25,'fatia',57,2.5,10.4,0.8,0.1,1.8,2.0,120,'TACO'),
+('Pão, de forma, branco','1 fatia','Carboidrato','🍞',25,'fatia',63,2.2,12.5,0.5,0.1,0.5,2.5,142,'TACO'),
+('Aveia, flocos','Flocos finos','Carboidrato','🌾',40,'col',152,5.6,27.1,2.6,0.5,3.8,0.0,2,'TACO'),
+('Granola, tradicional','Sem açúcar add.','Carboidrato','🌾',40,'col',183,4.2,30.6,5.8,1.0,3.5,8.0,20,'TACO'),
+('Tapioca, goma, preparada','Sem recheio','Carboidrato','🫓',50,'un',108,0.1,26.8,0.1,0.0,0.0,0.0,3,'TACO'),
+('Cuscuz, de milho, cozido','Com sal','Carboidrato','🫓',120,'g',156,3.5,33.4,1.3,0.3,1.8,0.0,244,'TACO'),
+('Batata, inglesa, cozida','Sem casca','Carboidrato','🥔',100,'g',52,1.2,11.9,0.1,0.0,1.2,0.0,3,'TACO'),
+('Batata doce, cozida','Sem casca','Carboidrato','🍠',100,'g',77,1.4,18.4,0.1,0.0,2.2,5.0,22,'TACO'),
+('Mandioca, cozida','Sem casca','Carboidrato','🫚',100,'g',125,0.7,30.1,0.2,0.0,1.4,0.0,3,'TACO'),
+('Milho, cozido','Em espiga','Carboidrato','🌽',85,'g',74,2.3,15.6,1.0,0.2,2.1,2.9,1,'TACO'),
+('Farinha de mandioca, torrada','Tipo biju','Carboidrato','🌾',30,'col',108,0.5,25.4,0.3,0.1,1.3,0.0,5,'TACO'),
+-- LEGUMINOSAS
+('Feijão, carioca, cozido','Sem tempero','Carboidrato','🫘',100,'g',77,4.8,13.6,0.5,0.1,8.5,0.0,2,'TACO'),
+('Feijão, preto, cozido','Sem tempero','Carboidrato','🫘',100,'g',77,5.2,14.0,0.5,0.1,8.4,0.0,1,'TACO'),
+('Feijão, branco, cozido','Sem tempero','Carboidrato','🫘',100,'g',118,8.0,21.0,0.4,0.1,10.0,0.0,7,'TACO'),
+('Lentilha, cozida','Sem tempero','Carboidrato','🫘',100,'g',101,7.9,17.3,0.5,0.1,7.9,0.0,2,'TACO'),
+('Grão-de-bico, cozido','Sem tempero','Carboidrato','🫘',100,'g',164,8.9,27.4,2.6,0.3,7.6,4.8,7,'TACO'),
+('Soja, grão, cozido','Sem tempero','Proteína','🫘',100,'g',141,14.6,9.7,7.2,1.1,5.8,0.0,1,'TACO'),
+('Ervilha, enlatada','Escorrida','Vegetal','🫛',100,'g',71,4.9,12.4,0.4,0.1,5.7,3.5,260,'TACO'),
+('Tofu, firme','Cru','Proteína','🫘',100,'g',76,8.1,1.9,4.8,0.7,0.3,0.4,7,'TACO'),
+-- FRUTAS
+('Banana, prata','Fruta fresca','Fruta','🍌',90,'un',81,1.1,20.7,0.2,0.1,2.0,11.6,1,'TACO'),
+('Banana, nanica','Fruta fresca','Fruta','🍌',100,'un',92,1.4,23.8,0.1,0.0,1.9,12.2,1,'TACO'),
+('Maçã, fuji','Com casca','Fruta','🍎',130,'un',56,0.3,14.7,0.2,0.0,1.3,9.9,1,'TACO'),
+('Laranja, pera','Fruta fresca','Fruta','🍊',130,'un',37,0.9,8.9,0.1,0.0,1.1,7.2,1,'TACO'),
+('Manga, palmer','Fruta fresca','Fruta','🥭',130,'un',64,0.5,16.8,0.2,0.0,1.6,15.0,2,'TACO'),
+('Mamão, papaia','Fruta fresca','Fruta','🧡',120,'g',40,0.6,9.8,0.1,0.0,1.8,5.9,3,'TACO'),
+('Abacaxi, polpa','Fruta fresca','Fruta','🍍',100,'g',48,0.9,12.3,0.1,0.0,1.0,9.9,1,'TACO'),
+('Melancia, polpa','Fruta fresca','Fruta','🍉',150,'g',38,0.7,9.2,0.2,0.0,0.4,7.6,1,'TACO'),
+('Uva, itália','Fruta fresca','Fruta','🍇',100,'g',68,0.7,17.3,0.1,0.0,0.9,15.5,1,'TACO'),
+('Morango, fresco','Fruta fresca','Fruta','🍓',100,'g',34,0.8,7.7,0.4,0.0,2.0,5.1,1,'TACO'),
+('Abacate, polpa','Fruta fresca','Fruta','🥑',80,'g',160,1.5,2.6,17.3,2.8,6.9,0.7,6,'TACO'),
+('Kiwi, polpa','Fruta fresca','Fruta','🥝',75,'un',44,0.8,10.1,0.5,0.0,2.0,8.9,3,'TACO'),
+('Pêssego, polpa','Fruta fresca','Fruta','🍑',100,'g',39,0.9,9.5,0.1,0.0,1.5,8.4,1,'TACO'),
+('Limão, polpa','Fruta fresca','Fruta','🍋',50,'un',15,0.4,4.3,0.1,0.0,1.8,1.0,1,'TACO'),
+('Coco, polpa, fresco','Fruta fresca','Fruta','🥥',45,'g',158,1.5,6.6,15.1,13.3,4.7,2.8,9,'TACO'),
+('Açaí, polpa, congelada','Sem açúcar','Fruta','🫐',100,'g',58,0.9,6.2,5.1,1.5,2.0,0.0,1,'TACO'),
+-- VEGETAIS
+('Alface, crespa, crua','Folha','Vegetal','🥬',30,'g',5,0.5,0.6,0.1,0.0,0.4,0.2,5,'TACO'),
+('Tomate, cru','Sem semente','Vegetal','🍅',100,'g',15,0.9,3.1,0.2,0.0,1.2,2.0,10,'TACO'),
+('Cenoura, crua','Sem casca','Vegetal','🥕',80,'g',31,0.8,7.2,0.2,0.0,2.4,3.7,45,'TACO'),
+('Brócolis, cozido','Sem sal','Vegetal','🥦',100,'g',35,4.0,5.2,0.4,0.0,3.3,1.1,25,'TACO'),
+('Espinafre, cozido','Sem sal','Vegetal','🥬',100,'g',26,3.0,3.0,0.4,0.1,2.6,0.4,62,'TACO'),
+('Abobrinha, cozida','Sem sal','Vegetal','🥒',100,'g',19,1.0,3.6,0.3,0.1,1.2,2.7,3,'TACO'),
+('Couve, cozida','Manteiga, sem sal','Vegetal','🥬',100,'g',35,3.1,4.8,0.7,0.1,2.5,0.0,16,'TACO'),
+('Pepino, cru','Sem casca','Vegetal','🥒',100,'g',13,0.6,2.7,0.1,0.0,0.5,1.8,2,'TACO'),
+('Cebola, crua','Sem casca','Vegetal','🧅',60,'g',25,0.6,5.9,0.1,0.0,1.1,4.7,2,'TACO'),
+('Pimentão, vermelho, cru','Sem semente','Vegetal','🫑',100,'g',28,0.9,6.3,0.3,0.0,1.9,4.2,4,'TACO'),
+('Beterraba, cozida','Sem casca','Vegetal','🫐',80,'g',44,1.5,10.0,0.1,0.0,2.0,8.0,54,'TACO'),
+('Vagem, cozida','Sem sal','Vegetal','🫛',100,'g',31,1.7,6.4,0.3,0.1,3.0,2.5,3,'TACO'),
+('Couve-flor, cozida','Sem sal','Vegetal','🥦',100,'g',19,1.8,3.1,0.3,0.0,2.0,1.5,18,'TACO'),
+('Quiabo, cozido','Sem sal','Vegetal','🫑',100,'g',23,1.6,4.6,0.2,0.0,3.2,1.2,7,'TACO'),
+('Berinjela, cozida','Sem sal','Vegetal','🍆',100,'g',24,0.8,5.4,0.2,0.0,3.0,3.0,3,'TACO'),
+('Chuchu, cozido','Sem sal','Vegetal','🥒',100,'g',16,0.6,3.5,0.1,0.0,1.4,1.8,2,'TACO'),
+-- GORDURAS / ÓLEOS
+('Azeite de oliva, extra-virgem','1 colher sopa','Gordura','🫒',10,'col',88,0.0,0.0,9.9,1.4,0.0,0.0,0,'TACO'),
+('Óleo de soja','1 colher sopa','Gordura','🫙',10,'col',88,0.0,0.0,9.9,1.6,0.0,0.0,0,'TACO'),
+('Óleo de coco','1 colher sopa','Gordura','🫙',10,'col',86,0.0,0.0,9.5,8.5,0.0,0.0,0,'TACO'),
+('Margarina, com sal','1 colher chá','Gordura','🧈',5,'col',35,0.0,0.1,3.9,0.9,0.0,0.1,52,'TACO'),
+-- OLEAGINOSAS
+('Amendoim, torrado, sem sal','Sem casca','Gordura','🥜',30,'g',175,7.7,6.1,14.5,2.0,2.4,1.4,2,'TACO'),
+('Castanha-do-Pará','Crua, sem casca','Gordura','🥜',30,'g',208,4.6,3.6,21.1,5.0,1.4,0.6,1,'TACO'),
+('Castanha de caju, torrada','Sem sal','Gordura','🥜',30,'g',170,4.5,9.5,13.8,2.6,0.9,3.2,5,'TACO'),
+('Amêndoa, torrada','Sem sal','Gordura','🥜',30,'g',185,6.4,6.4,16.1,1.2,3.4,1.5,1,'TACO'),
+('Nozes','Crua, sem casca','Gordura','🥜',30,'g',196,4.6,4.1,19.6,1.8,2.0,0.7,1,'TACO'),
+('Chia, semente','1 colher sopa','Gordura','🌱',15,'col',73,2.5,5.3,4.6,0.5,5.1,0.0,3,'TACO'),
+('Linhaça, semente','1 colher sopa','Gordura','🌱',15,'col',74,2.5,4.0,5.7,0.5,3.9,0.0,4,'TACO'),
+('Pasta de amendoim, integral','Sem açúcar','Gordura','🥜',30,'col',190,8.0,7.0,16.0,3.0,2.0,3.0,5,'TACO'),
+-- BEBIDAS
+('Café, espresso','Sem açúcar','Bebida','☕',50,'ml',2,0.1,0.4,0.0,0.0,0.0,0.0,2,'TACO'),
+('Suco, laranja, natural','Sem açúcar','Bebida','🧃',200,'ml',94,1.6,22.0,0.4,0.1,0.4,17.6,2,'TACO'),
+('Suco, caju, natural','Sem açúcar','Bebida','🧃',200,'ml',94,2.6,22.6,0.8,0.0,0.8,20.6,8,'TACO'),
+('Água de coco','Natural','Bebida','🥥',200,'ml',38,0.6,8.8,0.2,0.0,0.0,8.8,32,'TACO'),
+('Refrigerante, cola','Regular, lata','Bebida','🥤',350,'ml',147,0.0,37.8,0.0,0.0,0.0,37.8,35,'TACO'),
+('Whey protein, concentrado','Pó, por dose 30g','Proteína','💪',30,'col',110,22.0,4.0,1.5,0.8,0.0,2.5,75,'TACO'),
+-- PRATOS TÍPICOS / PRONTOS
+('Feijão, carioca, com caldo','Com temperos','Carboidrato','🫘',100,'g',87,5.2,14.8,1.1,0.2,7.2,0.0,142,'TACO'),
+('Arroz, feijão e frango','Refeição 300g','Proteína','🍽️',300,'g',411,32.0,47.0,8.0,2.0,4.0,0.0,185,'TACO'),
+('Coxinha, de frango','1 unidade média','Carboidrato','🍗',80,'un',255,9.0,26.0,13.0,3.0,1.0,2.0,380,'TACO'),
+('Pão de queijo, assado','1 unidade média','Carboidrato','🫓',35,'un',115,2.5,17.0,4.5,1.5,0.3,1.0,120,'TACO'),
+('Feijoada completa','Porção 300g','Proteína','🫘',300,'g',531,30.0,36.0,27.0,9.5,12.0,0.0,745,'TACO'),
+('Moqueca de peixe','Porção 300g','Proteína','🐟',300,'g',348,30.0,8.0,21.0,4.0,1.0,4.0,480,'TACO'),
+-- DOCES / SOBREMESAS
+('Chocolate, ao leite','1 barra 25g','Carboidrato','🍫',25,'g',133,1.8,14.8,8.0,4.8,0.3,13.0,28,'TACO'),
+('Chocolate, amargo 70%','1 barra 25g','Carboidrato','🍫',25,'g',135,2.4,10.8,9.2,5.4,2.1,6.2,2,'TACO'),
+('Sorvete, creme, baunilha','1 bola 80g','Laticínio','🍦',80,'g',166,2.5,19.5,8.8,5.5,0.0,16.0,58,'TACO'),
+('Mel, abelha','1 colher sopa','Carboidrato','🍯',20,'col',61,0.1,16.6,0.0,0.0,0.0,16.4,1,'TACO'),
+('Brigadeiro','1 unidade','Carboidrato','🍫',20,'un',75,1.2,11.5,3.0,1.8,0.2,9.5,18,'TACO'),
+-- SUPLEMENTOS
+('Creatina, monohidratada','Por dose 5g','Proteína','💊',5,'g',18,4.7,0.0,0.0,0.0,0.0,0.0,0,'TACO'),
+('Proteína vegana, ervilha','Por dose 30g','Proteína','💪',30,'col',105,20.0,4.0,1.5,0.0,0.5,1.0,80,'TACO');
+
+-- ── Usuário demo ─────────────────────────────────────────────────
+INSERT IGNORE INTO usuarios
+  (id, nome, email, genero, data_nasc, peso_atual, peso_alvo, altura_cm, nivel_ativ, meta_kcal, meta_agua_l, refeicoes_dia, objetivo)
+VALUES
+  (1, 'Usuário Demo', 'demo@sorrisocalories.com', 'F', '1993-07-15', 68.0, 62.0, 165, 'light', 1800, 2.5, 4, 'loss');
