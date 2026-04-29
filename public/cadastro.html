@@ -10,6 +10,22 @@
   const maxNasc = new Date();
   maxNasc.setFullYear(maxNasc.getFullYear() - 7);
   document.getElementById('nasc').max = maxNasc.toISOString().split('T')[0];
+  // Permite avançar com Enter em cada etapa
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+
+    // Evita disparar em textareas
+    if (e.target.tagName === 'TEXTAREA') return;
+
+    // Identifica qual etapa está visível e chama a função correta
+    if (document.getElementById('s1').style.display !== 'none') {
+      goStep2();
+    } else if (document.getElementById('s2').style.display !== 'none') {
+      goStep3();
+    } else if (document.getElementById('s3').style.display !== 'none') {
+      cadastrar();
+    }
+  });
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastro — Sorriso Calories</title>
@@ -277,10 +293,19 @@
     document.getElementById('err').classList.remove('show');
   }
 
+  let errTimer = null;
   function showErr(msg) {
     const el = document.getElementById('err');
     el.textContent = msg;
     el.classList.add('show');
+
+    // Limpa timer anterior se existir
+    if (errTimer) clearTimeout(errTimer);
+
+    // Some automaticamente após 3 segundos
+    errTimer = setTimeout(() => {
+      el.classList.remove('show');
+    }, 3000);
   }
 
   // Mostra ou esconde senha
@@ -411,6 +436,13 @@
       if (!/[0-9]/.test(senha))            return showErr('A senha deve ter pelo menos 1 número.');
       if (!/[^A-Za-z0-9]/.test(senha))     return showErr('A senha deve ter pelo menos 1 caractere especial.');
       if (senha !== senha2)                return showErr('As senhas não coincidem.');
+
+      // Valida que o gênero é um valor permitido
+      const genero = document.getElementById('ob-gen')?.value 
+                  || document.getElementById('genero')?.value;
+      if (!['M', 'F'].includes(genero)) {
+        return showErr('Selecione um gênero válido.');
+      }
 
       goStep(2);
     }

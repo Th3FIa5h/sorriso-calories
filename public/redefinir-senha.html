@@ -110,6 +110,7 @@
     const err = document.getElementById('err');
     err.textContent = 'Link inválido. Solicite um novo link de redefinição.';
     err.classList.add('show');
+    setTimeout(() => err.classList.remove('show'), 3000);
   }
 
   function toggleSenha(id, btn) {
@@ -162,12 +163,12 @@
     err.classList.remove('show');
     ok.classList.remove('show');
 
-    if (senha.length < 8)             { err.textContent = 'A senha deve ter pelo menos 8 caracteres.';      err.classList.add('show'); return; }
-    if (!/[A-Z]/.test(senha))         { err.textContent = 'A senha deve ter pelo menos 1 letra maiúscula.'; err.classList.add('show'); return; }
-    if (!/[a-z]/.test(senha))         { err.textContent = 'A senha deve ter pelo menos 1 letra minúscula.'; err.classList.add('show'); return; }
-    if (!/[0-9]/.test(senha))         { err.textContent = 'A senha deve ter pelo menos 1 número.';          err.classList.add('show'); return; }
-    if (!/[^A-Za-z0-9]/.test(senha))  { err.textContent = 'A senha deve ter pelo menos 1 caractere especial.'; err.classList.add('show'); return; }
-    if (senha !== senha2)             { err.textContent = 'As senhas não coincidem.';                        err.classList.add('show'); return; }
+    if (senha.length < 8)             { err.textContent = 'A senha deve ter pelo menos 8 caracteres.';      err.classList.add('show'); setTimeout(() => err.classList.remove('show'), 3000); return; }
+    if (!/[A-Z]/.test(senha))         { err.textContent = 'A senha deve ter pelo menos 1 letra maiúscula.'; err.classList.add('show'); setTimeout(() => err.classList.remove('show'), 3000); return; }
+    if (!/[a-z]/.test(senha))         { err.textContent = 'A senha deve ter pelo menos 1 letra minúscula.'; err.classList.add('show'); setTimeout(() => err.classList.remove('show'), 3000); return; }
+    if (!/[0-9]/.test(senha))         { err.textContent = 'A senha deve ter pelo menos 1 número.';          err.classList.add('show'); setTimeout(() => err.classList.remove('show'), 3000); return; }
+    if (!/[^A-Za-z0-9]/.test(senha))  { err.textContent = 'A senha deve ter pelo menos 1 caractere especial.'; err.classList.add('show'); setTimeout(() => err.classList.remove('show'), 3000); return; }
+    if (senha !== senha2)             { err.textContent = 'As senhas não coincidem.';                        err.classList.add('show'); setTimeout(() => err.classList.remove('show'), 3000); return; }
 
     const btn = document.getElementById('btn');
     btn.textContent = 'Salvando...';
@@ -189,12 +190,14 @@
       } else {
         err.textContent = d.error || 'Erro ao redefinir senha.';
         err.classList.add('show');
+        setTimeout(() => err.classList.remove('show'), 3000);
         btn.textContent = 'Salvar nova senha';
         btn.disabled    = false;
       }
     } catch(e) {
       err.textContent = 'Erro de conexão.';
       err.classList.add('show');
+      setTimeout(() => err.classList.remove('show'), 3000);
       btn.textContent = 'Salvar nova senha';
       btn.disabled    = false;
     }

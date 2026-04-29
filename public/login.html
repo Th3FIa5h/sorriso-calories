@@ -144,10 +144,19 @@
          </svg>`;
   }
 
+  let errTimer = null;
   function showErr(msg) {
     const el = document.getElementById('err');
     el.textContent = msg;
     el.classList.add('show');
+
+    // Limpa timer anterior se existir
+    if (errTimer) clearTimeout(errTimer);
+
+    // Some automaticamente após 3 segundos
+    errTimer = setTimeout(() => {
+      el.classList.remove('show');
+    }, 3000);
   }
 
   async function login() {
