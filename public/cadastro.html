@@ -113,9 +113,13 @@
     <h2 class="auth-title">Criar conta</h2>
     <p class="auth-sub">Seus dados de acesso</p>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="fg">
+      <div class="fg" style="grid-column:1/-1">
         <label class="lbl">Nome completo *</label>
-        <input class="inp" id="nome" placeholder="Ex: João Silva">
+        <input class="inp" id="nome" placeholder="Ex: João Silva"
+              oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')">
+        <div style="font-size:11px;color:var(--gray400);margin-top:4px">
+          Apenas letras e espaços
+        </div>
       </div>
       <div class="fg">
         <label class="lbl">E-mail *</label>
@@ -174,10 +178,11 @@
     <div style="display:flex;flex-direction:column;gap:14px">
       <div class="g2">
         <div class="fg">
-          <label class="lbl">Sexo biológico</label>
-          <select class="sel" id="genero">
-            <option value="F">Feminino</option>
+          <label class="lbl">Sexo Biológico *</label>
+          <select class="sel" id="genero" onchange="bloquearOpcaoVazia(this)">
+            <option value="" disabled selected>Selecione o seu gênero</option>
             <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
           </select>
         </div>
         <div class="fg">
@@ -187,11 +192,15 @@
         </div>
         <div class="fg">
           <label class="lbl">Peso atual (kg)</label>
-          <input class="inp" id="peso" type="number" placeholder="70" step="0.1">
+          <input class="inp" id="peso" type="number" placeholder="Ex: 70"
+                step="0.001" min="20" max="300"
+                oninput="limitarDecimais(this, 3)">
         </div>
         <div class="fg">
           <label class="lbl">Altura (cm)</label>
-          <input class="inp" id="altura" type="number" placeholder="170">
+          <input class="inp" id="altura" type="number" placeholder="Ex: 170"
+                step="0.01" min="100" max="300"
+                oninput="limitarDecimais(this, 2)">
         </div>
       </div>
       <div class="fg">
@@ -266,6 +275,64 @@
   if (localStorage.getItem('sc_token')) location.href = 'index.html';
 
   let objetivo = 'loss';
+
+  // Impede que a pessoa volte para a opção vazia do gênero
+  function bloquearOpcaoVazia(sel) {
+    // Remove a opção vazia após primeira seleção
+    const vazia = sel.querySelector('option[value=""]');
+    if (vazia && sel.value !== '') {
+      vazia.disabled = true;
+    }
+  }
+
+  // Limita casas decimais de um input numérico
+  function limitarDecimais(input, casas) {
+    const val = input.value;
+    if (val.includes('.')) {
+      const partes = val.split('.');
+      if (partes[1].length > casas) {
+        input.value = partes[0] + '.' + partes[1].slice(0, casas);
+      }
+    }
+  }
+
+  // Valida se o tipo original do input foi alterado
+  function validarTiposInputs() {
+    const campos = [
+      { id: 'nome',   tipo: 'text'   },
+      { id: 'email',  tipo: 'email'  },
+      { id: 'senha',  tipo: 'password' },
+      { id: 'senha2', tipo: 'password' },
+    ];
+
+    for (const campo of campos) {
+      const el = document.getElementById(campo.id);
+      if (!el) continue;
+      if (el.type !== campo.tipo) {
+        return `Campo "${campo.id}" foi modificado indevidamente.`;
+      }
+    }
+    return null;
+  }
+
+  // Valida se o tipo dos inputs da etapa 2 foi alterado
+  function validarTiposInputsEtapa2() {
+    const campos = [
+      { id: 'peso',   tipo: 'number' },
+      { id: 'altura', tipo: 'number' },
+      { id: 'nasc',   tipo: 'date'   },
+    ];
+
+    for (const campo of campos) {
+      const el = document.getElementById(campo.id);
+      if (!el) continue;
+      if (el.type !== campo.tipo) {
+        return `Campo "${campo.id}" foi modificado indevidamente.`;
+      }
+    }
+    return null;
+  }
+
 
   // Navega entre as etapas
   function goStep(n) {
@@ -393,62 +460,94 @@
     }
 
   // Validação e avanço para etapa 2
-    function goStep2() {
-      const nome   = document.getElementById('nome').value.trim();
-      const email  = document.getElementById('email').value.trim();
-      const senha  = document.getElementById('senha').value;
-      const senha2 = document.getElementById('senha2').value;
+  function goStep2() {
+    // Verifica se algum tipo de input foi alterado
+    const erroTipo = validarTiposInputs();
+    if (erroTipo) return showErr(erroTipo);
 
-      if (!nome) return showErr('Informe seu nome.');
+    const nome   = document.getElementById('nome').value.trim();
+    const email  = document.getElementById('email').value.trim();
+    const senha  = document.getElementById('senha').value;
+    const senha2 = document.getElementById('senha2').value;
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email)                  return showErr('Informe seu e-mail.');
-      if (!emailRegex.test(email)) return showErr('Email inválido. Use um formato como: nome@exemplo.com');
+    if (!nome) return showErr('Informe seu nome.');
 
-      if (senha.length < 8)                return showErr('A senha deve ter pelo menos 8 caracteres.');
-      if (!/[A-Z]/.test(senha))            return showErr('A senha deve ter pelo menos 1 letra maiúscula.');
-      if (!/[a-z]/.test(senha))            return showErr('A senha deve ter pelo menos 1 letra minúscula.');
-      if (!/[0-9]/.test(senha))            return showErr('A senha deve ter pelo menos 1 número.');
-      if (!/[^A-Za-z0-9]/.test(senha))     return showErr('A senha deve ter pelo menos 1 caractere especial.');
-      if (senha !== senha2)                return showErr('As senhas não coincidem.');
-
-      goStep(2);
+    // Valida que o nome tem apenas letras e espaços
+    if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(nome)) {
+      return showErr('O nome deve conter apenas letras e espaços.');
     }
+
+    // Valida que o nome tem pelo menos 2 palavras
+    if (nome.trim().split(/\s+/).length < 2) {
+      return showErr('Informe seu nome completo (nome e sobrenome).');
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email)                  return showErr('Informe seu e-mail.');
+    if (!emailRegex.test(email)) return showErr('Email inválido. Use um formato como: nome@exemplo.com');
+
+    if (senha.length < 8)               return showErr('A senha deve ter pelo menos 8 caracteres.');
+    if (!/[A-Z]/.test(senha))           return showErr('A senha deve ter pelo menos 1 letra maiúscula.');
+    if (!/[a-z]/.test(senha))           return showErr('A senha deve ter pelo menos 1 letra minúscula.');
+    if (!/[0-9]/.test(senha))           return showErr('A senha deve ter pelo menos 1 número.');
+    if (!/[^A-Za-z0-9]/.test(senha))    return showErr('A senha deve ter pelo menos 1 caractere especial.');
+    if (senha !== senha2)               return showErr('As senhas não coincidem.');
+
+    goStep(2);
+  }
 
   // Avança para etapa 3 e calcula preview da meta
   function goStep3() {
-      const pesoVal   = document.getElementById('peso').value;
-      const alturaVal = document.getElementById('altura').value;
-      const nascVal   = document.getElementById('nasc').value;
+    // Verifica se algum tipo de input foi alterado
+    const erroTipo = validarTiposInputsEtapa2();
+    if (erroTipo) return showErr(erroTipo);
 
-      // Campos obrigatórios
-      if (!pesoVal)   return showErr('Informe seu peso atual.');
-      if (!alturaVal) return showErr('Informe sua altura.');
-      if (!nascVal)   return showErr('Informe sua data de nascimento.');
+    const pesoVal   = document.getElementById('peso').value;
+    const alturaVal = document.getElementById('altura').value;
+    const nascVal   = document.getElementById('nasc').value;
+    const genero    = document.getElementById('genero').value;
 
-      const peso   = parseFloat(pesoVal);
-      const altura = parseFloat(alturaVal);
-
-      // Validação de peso
-      if (isNaN(peso) || peso <= 0)          return showErr('Informe um peso válido.');
-      if (peso < 20 || peso > 300)           return showErr('Peso deve ser entre 20kg e 300kg.');
-
-      // Validação de altura
-      if (isNaN(altura) || altura <= 0)      return showErr('Informe uma altura válida.');
-      if (altura < 100 || altura > 300)      return showErr('Altura deve ser entre 100cm e 300cm.');
-
-      // Validação de idade mínima (7 anos)
-      const nasc  = new Date(nascVal);
-      const hoje  = new Date();
-      const idade = hoje.getFullYear() - nasc.getFullYear()
-        - (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate()) ? 1 : 0);
-
-      if (idade < 7)  return showErr('É necessário ter pelo menos 7 anos para se cadastrar.');
-      if (idade > 120) return showErr('Verifique a data de nascimento informada.');
-
-      goStep(3);
-      calcMeta();
+    // Valida gênero
+    if (!genero || !['M', 'F'].includes(genero)) {
+      return showErr('Selecione seu gênero.');
     }
+
+    if (!pesoVal)   return showErr('Informe seu peso atual.');
+    if (!alturaVal) return showErr('Informe sua altura.');
+    if (!nascVal)   return showErr('Informe sua data de nascimento.');
+
+    const peso   = parseFloat(pesoVal);
+    const altura = parseFloat(alturaVal);
+
+    // Valida decimais
+    if (pesoVal.includes('.') && pesoVal.split('.')[1].length > 3) {
+      return showErr('O peso pode ter no máximo 3 casas decimais.');
+    }
+    if (alturaVal.includes('.') && alturaVal.split('.')[1].length > 2) {
+      return showErr('A altura pode ter no máximo 2 casas decimais.');
+    }
+
+    // Valida limites — usa Math.floor para garantir precisão
+    if (isNaN(peso) || peso < 20)    return showErr('Peso mínimo é 20kg.');
+    if (peso > 300)                  return showErr('Peso máximo é 300kg.');
+    if (isNaN(altura) || altura < 100) return showErr('Altura mínima é 100cm.');
+    if (altura > 300)                return showErr('Altura máxima é 300cm.');
+
+    // Rejeita 19.999 e 99.999 explicitamente
+    if (peso < 20)   return showErr('Peso mínimo é 20kg.');
+    if (altura < 100) return showErr('Altura mínima é 100cm.');
+
+    const nasc  = new Date(nascVal);
+    const hoje  = new Date();
+    const idade = hoje.getFullYear() - nasc.getFullYear()
+      - (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate()) ? 1 : 0);
+
+    if (idade < 7)   return showErr('É necessário ter pelo menos 7 anos para se cadastrar.');
+    if (idade > 120) return showErr('Verifique a data de nascimento informada.');
+
+    goStep(3);
+    calcMeta();
+  }
 
   // Seleciona o objetivo e recalcula o preview
   function pickObj(el) {

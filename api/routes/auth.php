@@ -140,6 +140,22 @@ function authCadastro(array $body): void {
     jsonResponse([
         'message' => 'Cadastro realizado! Verifique seu email para ativar a conta.',
     ], 201);
+
+    // Valida que o nome contém apenas letras e espaços
+    if (!preg_match('/^[\p{L}\s]+$/u', trim($body['nome']))) {
+        jsonError('O nome deve conter apenas letras e espaços.', 422);
+    }
+
+    // Valida que tem pelo menos nome e sobrenome
+    $partesNome = array_filter(explode(' ', trim($body['nome'])));
+    if (count($partesNome) < 2) {
+        jsonError('Informe seu nome completo (nome e sobrenome).', 422);
+    }
+
+    // Valida gênero
+    if (!in_array($body['genero'] ?? '', ['M', 'F'])) {
+        jsonError('Gênero inválido.', 422);
+    }
 }
 
 /**
