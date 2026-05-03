@@ -190,7 +190,14 @@ function calcMetaKcal(array $u): int {
     $obj  = $u['objetivo']   ?? 'loss';
 
     // Calcula a idade a partir da data de nascimento
-    $age = $nasc ? (int)date_diff(new DateTime($nasc), new DateTime())->y : 30;
+    $age = 30;
+    if ($nasc) {
+        $nascDt = DateTime::createFromFormat('Y-m-d', $nasc);
+        if ($nascDt && $nascDt < new DateTime()) {
+            $age = (int)date_diff($nascDt, new DateTime())->y;
+            $age = max(7, min(120, $age));
+        }
+    }
 
     // Passo 1: TMB diferenciado por gênero
     $bmr = $gen === 'M'

@@ -10,6 +10,22 @@
   const maxNasc = new Date();
   maxNasc.setFullYear(maxNasc.getFullYear() - 7);
   document.getElementById('nasc').max = maxNasc.toISOString().split('T')[0];
+  // Permite avançar com Enter em cada etapa
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+
+    // Evita disparar em textareas
+    if (e.target.tagName === 'TEXTAREA') return;
+
+    // Identifica qual etapa está visível e chama a função correta
+    if (document.getElementById('s1').style.display !== 'none') {
+      goStep2();
+    } else if (document.getElementById('s2').style.display !== 'none') {
+      goStep3();
+    } else if (document.getElementById('s3').style.display !== 'none') {
+      cadastrar();
+    }
+  });
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastro — Sorriso Calories</title>
@@ -344,10 +360,19 @@
     document.getElementById('err').classList.remove('show');
   }
 
+  let errTimer = null;
   function showErr(msg) {
     const el = document.getElementById('err');
     el.textContent = msg;
     el.classList.add('show');
+
+    // Limpa timer anterior se existir
+    if (errTimer) clearTimeout(errTimer);
+
+    // Some automaticamente após 3 segundos
+    errTimer = setTimeout(() => {
+      el.classList.remove('show');
+    }, 3000);
   }
 
   // Mostra ou esconde senha
@@ -486,12 +511,12 @@
     if (!email)                  return showErr('Informe seu e-mail.');
     if (!emailRegex.test(email)) return showErr('Email inválido. Use um formato como: nome@exemplo.com');
 
-    if (senha.length < 8)               return showErr('A senha deve ter pelo menos 8 caracteres.');
-    if (!/[A-Z]/.test(senha))           return showErr('A senha deve ter pelo menos 1 letra maiúscula.');
-    if (!/[a-z]/.test(senha))           return showErr('A senha deve ter pelo menos 1 letra minúscula.');
-    if (!/[0-9]/.test(senha))           return showErr('A senha deve ter pelo menos 1 número.');
-    if (!/[^A-Za-z0-9]/.test(senha))    return showErr('A senha deve ter pelo menos 1 caractere especial.');
-    if (senha !== senha2)               return showErr('As senhas não coincidem.');
+      if (senha.length < 8)                return showErr('A senha deve ter pelo menos 8 caracteres.');
+      if (!/[A-Z]/.test(senha))            return showErr('A senha deve ter pelo menos 1 letra maiúscula.');
+      if (!/[a-z]/.test(senha))            return showErr('A senha deve ter pelo menos 1 letra minúscula.');
+      if (!/[0-9]/.test(senha))            return showErr('A senha deve ter pelo menos 1 número.');
+      if (!/[^A-Za-z0-9]/.test(senha))     return showErr('A senha deve ter pelo menos 1 caractere especial.');
+      if (senha !== senha2)                return showErr('As senhas não coincidem.');
 
     goStep(2);
   }

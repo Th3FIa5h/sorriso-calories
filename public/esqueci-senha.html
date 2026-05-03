@@ -84,6 +84,7 @@
     if (!email) {
       err.textContent = 'Digite seu email.';
       err.classList.add('show');
+      setTimeout(() => err.classList.remove('show'), 3000);
       return;
     }
 
@@ -95,11 +96,13 @@
     if (!email) {
       err.textContent = 'Digite seu email.';
       err.classList.add('show');
+      setTimeout(() => err.classList.remove('show'), 3000);
       return;
     }
     if (!emailRegex.test(email)) {
       err.textContent = 'Email inválido. Use um formato como: nome@exemplo.com';
       err.classList.add('show');
+      setTimeout(() => err.classList.remove('show'), 3000);
       return;
     }
 
@@ -123,6 +126,7 @@
     } catch(e) {
       err.textContent = 'Erro de conexão. Tente novamente.';
       err.classList.add('show');
+      setTimeout(() => err.classList.remove('show'), 3000);
       btn.textContent = 'Enviar link de recuperação';
       btn.disabled    = false;
     }
