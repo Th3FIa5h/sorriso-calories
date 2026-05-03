@@ -312,38 +312,56 @@
     }
   }
 
+  
+  // Guarda os tipos originais dos inputs ao carregar a página
+  const tiposOriginais = {};
+  document.addEventListener('DOMContentLoaded', () => {
+    ['nome', 'email', 'senha', 'senha2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) tiposOriginais[id] = el.getAttribute('type') || 'text';
+    });
+  });
+
   // Valida se o tipo original do input foi alterado
   function validarTiposInputs() {
-    const campos = [
-      { id: 'nome',   tipo: 'text'   },
-      { id: 'email',  tipo: 'email'  },
-      { id: 'senha',  tipo: 'password' },
-      { id: 'senha2', tipo: 'password' },
-    ];
-
-    for (const campo of campos) {
-      const el = document.getElementById(campo.id);
+    const campos = ['nome', 'email', 'senha', 'senha2'];
+    for (const id of campos) {
+      const el = document.getElementById(id);
       if (!el) continue;
-      if (el.type !== campo.tipo) {
-        return `Campo "${campo.id}" foi modificado indevidamente.`;
+
+      const tipoAtual    = el.type;
+      const tipoOriginal = tiposOriginais[id];
+
+      // Permite que password vire text (botão mostrar/esconder)
+      // mas não permite outros tipos como color, number, etc.
+      const tiposPermitidos = tipoOriginal === 'password'
+        ? ['password', 'text']
+        : [tipoOriginal];
+
+      if (!tiposPermitidos.includes(tipoAtual)) {
+        return `O campo "${id}" foi modificado indevidamente.`;
       }
     }
     return null;
   }
 
+  
+  const tiposOriginaisEtapa2 = {};
+  document.addEventListener('DOMContentLoaded', () => {
+    ['peso', 'altura', 'nasc'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) tiposOriginaisEtapa2[id] = el.getAttribute('type') || 'text';
+    });
+  });
+
   // Valida se o tipo dos inputs da etapa 2 foi alterado
   function validarTiposInputsEtapa2() {
-    const campos = [
-      { id: 'peso',   tipo: 'number' },
-      { id: 'altura', tipo: 'number' },
-      { id: 'nasc',   tipo: 'date'   },
-    ];
-
-    for (const campo of campos) {
-      const el = document.getElementById(campo.id);
+    const campos = ['peso', 'altura', 'nasc'];
+    for (const id of campos) {
+      const el = document.getElementById(id);
       if (!el) continue;
-      if (el.type !== campo.tipo) {
-        return `Campo "${campo.id}" foi modificado indevidamente.`;
+      if (el.type !== tiposOriginaisEtapa2[id]) {
+        return `O campo "${id}" foi modificado indevidamente.`;
       }
     }
     return null;
