@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <script>
-  // Aplica o tema salvo antes de renderizar a página (evita flash)
   const _t = localStorage.getItem('sc_tema');
   if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 </script>
@@ -22,14 +21,16 @@
          color:var(--gray600); font-size:13px; cursor:pointer; display:flex; align-items:center;
          justify-content:center; transition:all .18s; margin-left:8px; flex-shrink:0 }
   .rb:hover { background:#fde8e8; color:#c0392b }
-  /* Card de refeição ainda não registrada (tracejado) */
   .em  { border:2px dashed var(--gray200); box-shadow:none; background:transparent }
   .em .mch { border:none }
-  /* Botões de navegação de data */
   .db2 { width:36px; height:36px; border-radius:50%; border:1.5px solid var(--gray200);
          background:var(--white); font-size:18px; cursor:pointer; display:flex;
          align-items:center; justify-content:center; transition:all .18s; color:var(--gray600) }
   .db2:hover { border-color:var(--g500); color:var(--g700) }
+  /* Caixa de observações dentro do card de refeição */
+  .obs-box { background:var(--g50); border-radius:var(--rs); padding:8px 12px;
+             font-size:12px; color:var(--gray600); margin-top:10px;
+             border-left:3px solid var(--g300); font-style:italic }
 </style>
 </head>
 <body>
@@ -39,20 +40,15 @@
     <div class="ph">
       <div><h2>Registro de Refeições</h2><p id="dlabel">—</p></div>
       <div style="display:flex;gap:10px;align-items:center">
-        <!-- Navegação por data: voltar um dia -->
         <button class="db2" onclick="changeDate(-1)">←</button>
         <input type="date" class="inp" id="dpicker" style="width:190px" onchange="loadDay()">
-        <!-- Navegação por data: avançar um dia -->
         <button class="db2" onclick="changeDate(1)">→</button>
         <a href="adicionar-refeicao.html" class="btn" style="margin-left:8px">+ Nova Refeição</a>
       </div>
     </div>
     <div class="ca">
       <div class="ml">
-        <!-- Coluna principal: cards de refeições -->
         <div id="mcol"><p style="text-align:center;padding:60px;color:var(--gray400)">Carregando...</p></div>
-
-        <!-- Coluna lateral: resumo e macros -->
         <div style="display:flex;flex-direction:column;gap:20px">
           <div class="card">
             <div class="ct" style="margin-bottom:16px">Resumo do Dia</div>
@@ -81,7 +77,6 @@
   let today = new Date().toISOString().split('T')[0];
   let meta  = 1800;
 
-  // Avança ou recua um dia na data selecionada
   function changeDate(d) {
     const dt = new Date(today + 'T12:00:00');
     dt.setDate(dt.getDate() + d);
@@ -90,7 +85,6 @@
     loadDay();
   }
 
-  // Carrega todas as refeições do dia selecionado
   async function loadDay() {
     today = document.getElementById('dpicker').value || today;
     const lbl = new Date(today + 'T12:00:00').toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
@@ -111,14 +105,12 @@
     const f  = Math.round(day.totais.fat  || 0);
     const saldo = meta - k;
 
-    // Atualiza card de resumo
     document.getElementById('sum-k').textContent = k.toLocaleString('pt-BR') + ' kcal';
     document.getElementById('sum-m').textContent = meta.toLocaleString('pt-BR') + ' kcal';
     document.getElementById('sum-s').textContent = (saldo >= 0 ? '−' : '+') + Math.abs(saldo).toLocaleString('pt-BR') + ' kcal';
     document.getElementById('sum-s').style.color = saldo >= 0 ? 'var(--g700)' : '#e07b39';
     document.getElementById('sum-r').textContent = day.refeicoes.length + ' registradas';
 
-    // Atualiza barras de macronutrientes
     document.getElementById('mcol2').innerHTML = [
       ['Proteínas',    p, pm, 'var(--g700)'],
       ['Carboidratos', c, cm, 'var(--g500)'],
@@ -134,17 +126,19 @@
         </div>
       </div>`).join('');
 
-    // Renderiza os cards de refeições
     const col = document.getElementById('mcol');
     col.innerHTML = '';
+
+    // Renderiza refeições registradas
     for (const r of day.refeicoes) col.innerHTML += buildCard(r);
 
-    // Exibe cards vazios para refeições ainda não registradas
+    // Renderiza cards vazios para tipos ainda não registrados no dia
     const reg = day.refeicoes.map(r => r.tipo);
-    for (const t of MT) if (!reg.includes(t)) col.innerHTML += buildEmpty(t);
+    for (const t of MT) {
+      if (!reg.includes(t)) col.innerHTML += buildEmpty(t);
+    }
   }
 
-  // Monta o card HTML de uma refeição com seus itens
   function buildCard(r) {
     const itens = (r.itens || []).map(i => `
       <div class="fr">
@@ -157,6 +151,11 @@
           <button class="rb" onclick="rmItem(${r.id},${i.id})">×</button>
         </div>
       </div>`).join('');
+
+    // Exibe observações se existirem
+    const obsHtml = r.obs
+      ? `<div class="obs-box">💬 ${r.obs}</div>`
+      : '';
 
     return `
       <div class="mc" id="mc-${r.id}">
@@ -174,7 +173,9 @@
         </div>
         <div class="mcb">
           ${itens || '<p style="font-size:13px;color:var(--gray400);padding:6px 0">Nenhum item.</p>'}
-          <a href="adicionar-refeicao.html"
+          ${obsHtml}
+          <!-- Passa o ID da refeição existente para adicionar alimento sem criar nova -->
+          <a href="adicionar-refeicao.html?ref_id=${r.id}&tipo=${r.tipo}"
              style="display:flex;align-items:center;gap:7px;padding:9px 0;
                     color:var(--g500);font-size:13px;font-weight:500;text-decoration:none;margin-top:4px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -188,28 +189,25 @@
       </div>`;
   }
 
-  // Card vazio para refeições não registradas ainda
-    function buildEmpty(t) {
-      return `
-        <div class="mc em">
-          <div class="mch">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:12px;height:12px;border-radius:50%;background:var(--gray400)"></div>
-              <h3 style="font-size:15px;font-weight:600;color:var(--gray400)">${ML[t]}</h3>
-            </div>
-            <a href="adicionar-refeicao.html?tipo=${t}" class="btn" style="font-size:13px;padding:10px 20px">+ Adicionar</a>
+  function buildEmpty(t) {
+    return `
+      <div class="mc em">
+        <div class="mch">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--gray400)"></div>
+            <h3 style="font-size:15px;font-weight:600;color:var(--gray400)">${ML[t]}</h3>
           </div>
-        </div>`;
-    }
+          <a href="adicionar-refeicao.html?tipo=${t}" class="btn" style="font-size:13px;padding:10px 20px">+ Adicionar</a>
+        </div>
+      </div>`;
+  }
 
-  // Remove um item específico de uma refeição
   async function rmItem(refId, itemId) {
     if (!confirm('Remover?')) return;
     try { await DEL(`refeicoes/${refId}/itens/${itemId}`); toast('Removido ✅'); loadDay(); }
     catch(e) { toast(e.message, 'error'); }
   }
 
-  // Remove uma refeição inteira e todos os seus itens
   async function rmRef(id) {
     if (!confirm('Excluir refeição?')) return;
     try { await DEL(`refeicoes/${id}`); toast('Excluída ✅'); loadDay(); }

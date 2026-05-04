@@ -163,7 +163,6 @@
     const email = document.getElementById('email').value.trim();
     const senha = document.getElementById('senha').value;
 
-    // Validação básica no frontend
     if (!email || !senha) {
       showErr('Preencha o e-mail e a senha.');
       return;
@@ -173,40 +172,59 @@
     btn.textContent = 'Entrando...';
     btn.disabled    = true;
 
-    try {
-      const res = await fetch(`${BASE}/auth/login`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, senha }),
-      });
-      const d = await res.json();
+    // Tenta até 3 vezes antes de desistir
+    const maxTentativas = 3;
+    let ultimoErro      = null;
 
-      if (!res.ok) {
-        showErr(d.error || 'Erro ao fazer login.');
+    for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+      try {
+        const res = await fetch(`${BASE}/auth/login`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email, senha }),
+        });
+        const d = await res.json();
+
+        if (!res.ok) {
+          // Erro da API (ex: senha errada) — não tenta de novo
+          showErr(d.error || 'Erro ao fazer login.');
+          btn.textContent = 'Entrar';
+          btn.disabled    = false;
+          return;
+        }
+
+        // Login bem-sucedido
+        localStorage.setItem('sc_token', String(d.token));
+        localStorage.setItem('sc_uid',   String(d.usuario.id));
+
+        const tokenSalvo = localStorage.getItem('sc_token');
+        const uidSalvo   = localStorage.getItem('sc_uid');
+
+        if (tokenSalvo && uidSalvo) {
+          location.href = 'index.html';
+        } else {
+          showErr('Erro ao salvar sessão. Tente novamente.');
+          btn.textContent = 'Entrar';
+          btn.disabled    = false;
+        }
         return;
+
+      } catch(e) {
+        // Erro de rede — guarda e tenta de novo
+        ultimoErro = e;
+
+        if (tentativa < maxTentativas) {
+          // Aguarda 1 segundo antes de tentar de novo
+          btn.textContent = `Tentando (${tentativa}/${maxTentativas})...`;
+          await new Promise(r => setTimeout(r, 1000));
+        }
       }
-
-      // Salva o token e o ID do usuário no localStorage
-      localStorage.setItem('sc_token', String(d.token));
-      localStorage.setItem('sc_uid',   String(d.usuario.id));
-
-      // Confirma que foi salvo antes de redirecionar
-      const tokenSalvo = localStorage.getItem('sc_token');
-      const uidSalvo   = localStorage.getItem('sc_uid');
-      console.log('Antes de redirecionar — token:', tokenSalvo, '| uid:', uidSalvo);
-
-      if (tokenSalvo && uidSalvo) {
-        location.href = 'index.html';
-      } else {
-        showErr('Erro ao salvar sessão. Tente novamente.');
-      }
-
-    } catch(e) {
-      showErr('Erro de conexão. Verifique se o servidor está rodando.');
-    } finally {
-      btn.textContent = 'Entrar';
-      btn.disabled    = false;
     }
+
+    // Esgotou as tentativas
+    showErr('Erro de conexão. Verifique sua internet e tente novamente.');
+    btn.textContent = 'Entrar';
+    btn.disabled    = false;
   }
 </script>
 <!-- Botão de tema no canto superior direito -->

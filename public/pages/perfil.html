@@ -33,8 +33,6 @@
   .goi { font-size:28px; margin-bottom:10px }
   .gol { font-size:14px; font-weight:600; color:var(--gray800) }
   .god { font-size:12px; color:var(--gray400); margin-top:4px }
-
-  /* Modal de excluir conta */
   .delete-modal { max-width:480px; text-align:center }
   .delete-emoji { font-size:64px; margin-bottom:16px; display:block }
   .delete-title { font-family:var(--fd); font-size:24px; font-weight:400;
@@ -62,7 +60,6 @@
     <div class="ca">
       <div class="pl">
 
-        <!-- Card de resumo lateral -->
         <div class="pc">
           <div class="pav" id="p-av">?</div>
           <div class="pnm" id="p-nm">—</div>
@@ -86,10 +83,8 @@
           </div>
         </div>
 
-        <!-- Formulários -->
         <div style="display:flex;flex-direction:column;gap:20px">
 
-          <!-- Dados pessoais -->
           <div class="card">
             <div class="ct" style="margin-bottom:18px">Dados Pessoais</div>
             <div style="display:flex;flex-direction:column;gap:14px">
@@ -108,13 +103,12 @@
             </div>
           </div>
 
-          <!-- Medidas -->
           <div class="card">
             <div class="ct" style="margin-bottom:18px">Medidas & Composição</div>
             <div class="g3">
-              <div class="fg"><label class="lbl">Peso atual (kg)</label>    <input class="inp" id="e-pe" type="number" step="0.1"></div>
-              <div class="fg"><label class="lbl">Peso desejado (kg)</label> <input class="inp" id="e-al" type="number" step="0.1"></div>
-              <div class="fg"><label class="lbl">Altura (cm)</label>         <input class="inp" id="e-at" type="number"></div>
+              <div class="fg"><label class="lbl">Peso atual (kg)</label><input class="inp" id="e-pe" type="number" step="0.001" min="20" max="300"></div>
+              <div class="fg"><label class="lbl">Peso desejado (kg)</label><input class="inp" id="e-al" type="number" step="0.001" min="20" max="300"></div>
+              <div class="fg"><label class="lbl">Altura (cm)</label><input class="inp" id="e-at" type="number" step="0.01" min="100" max="300"></div>
               <div class="fg">
                 <label class="lbl">Nível de Atividade</label>
                 <select class="sel" id="e-av">
@@ -138,7 +132,6 @@
             </div>
           </div>
 
-          <!-- Objetivo -->
           <div class="card">
             <div class="ct" style="margin-bottom:16px">Objetivo Principal</div>
             <div class="gos">
@@ -160,7 +153,6 @@
             </div>
           </div>
 
-          <!-- Botões de ação -->
           <div style="display:flex;justify-content:space-between;align-items:center">
             <button onclick="openDeleteModal()"
               style="background:transparent;border:none;color:#c0392b;
@@ -179,7 +171,6 @@
   </main>
 </div>
 
-<!-- Modal de excluir conta -->
 <div class="overlay" id="delete-overlay" style="display:none">
   <div class="modal delete-modal">
     <span class="delete-emoji" id="del-emoji">😱</span>
@@ -214,8 +205,8 @@
       if (u.criado_em) v('p-sd').textContent = new Date(u.criado_em).toLocaleDateString('pt-BR', { month:'short', year:'numeric' });
       if (u.peso_atual && u.peso_alvo) {
         const diff = Math.abs(u.peso_atual - u.peso_alvo);
-        v('p-pg').textContent  = (u.peso_atual > u.peso_alvo ? '−' : '+') + diff.toFixed(1) + ' kg restantes';
-        v('p-pb').style.width  = '20%';
+        v('p-pg').textContent = (u.peso_atual > u.peso_alvo ? '−' : '+') + diff.toFixed(1) + ' kg restantes';
+        v('p-pb').style.width = '20%';
       }
       v('e-nm').value = u.nome          || '';
       v('e-em').value = u.email         || '';
@@ -237,33 +228,36 @@
   async function save() {
     const goal = document.querySelector('.go.on')?.dataset.g;
     if (!goal) { toast('Selecione um objetivo', 'error'); return; }
+
     const btn = v('sbtn');
-    btn.textContent = 'Salvando...'; btn.disabled = true;
+    btn.textContent = 'Salvando...';
+    btn.disabled    = true;
+
     try {
       const pesoVal   = v('e-pe').value;
       const alturaVal = v('e-at').value;
       const nascVal   = v('e-ns').value;
 
-      if (!pesoVal)   { toast('Informe seu peso atual.', 'error'); return; }
-      if (!alturaVal) { toast('Informe sua altura.', 'error'); return; }
+      if (!pesoVal)   { toast('Informe seu peso atual.', 'error');  btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
+      if (!alturaVal) { toast('Informe sua altura.', 'error');      btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
 
       const peso   = parseFloat(pesoVal);
       const altura = parseFloat(alturaVal);
 
-      if (isNaN(peso)   || peso   <= 0) { toast('Informe um peso válido.', 'error');   return; }
-      if (isNaN(altura) || altura <= 0) { toast('Informe uma altura válida.', 'error'); return; }
-      if (peso   < 20  || peso   > 300) { toast('Peso deve ser entre 20kg e 300kg.', 'error');    return; }
-      if (altura < 100 || altura > 300) { toast('Altura deve ser entre 100cm e 300cm.', 'error'); return; }
+      if (isNaN(peso)   || peso   <= 0)  { toast('Informe um peso válido.', 'error');           btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
+      if (isNaN(altura) || altura <= 0)  { toast('Informe uma altura válida.', 'error');        btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
+      if (peso   < 20   || peso   > 300) { toast('Peso deve ser entre 20kg e 300kg.', 'error'); btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
+      if (altura < 100  || altura > 300) { toast('Altura deve ser entre 100cm e 300cm.', 'error'); btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
 
       if (nascVal) {
         const nasc  = new Date(nascVal);
         const hoje  = new Date();
         const idade = hoje.getFullYear() - nasc.getFullYear()
           - (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate()) ? 1 : 0);
-        if (idade < 7)   { toast('É necessário ter pelo menos 7 anos.', 'error'); return; }
-        if (idade > 120) { toast('Verifique a data de nascimento.', 'error');     return; }
+        if (idade < 7)   { toast('É necessário ter pelo menos 7 anos.', 'error'); btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
+        if (idade > 120) { toast('Verifique a data de nascimento.', 'error');     btn.textContent = '✅ Salvar Alterações'; btn.disabled = false; return; }
       }
-}
+
       await PUT(`usuarios/${UID.get()}`, {
         nome:          v('e-nm').value.trim(),
         email:         v('e-em').value.trim(),
@@ -277,46 +271,32 @@
         meta_agua_l:   parseFloat(v('e-ag').value) || 2.5,
         objetivo:      goal,
       });
+
       sessionStorage.removeItem('sc_user');
       toast('Perfil atualizado ✅');
       loadUser();
+
     } catch(e) {
       toast('Erro: ' + e.message, 'error');
     } finally {
-      btn.textContent = '✅ Salvar Alterações'; btn.disabled = false;
+      btn.textContent = '✅ Salvar Alterações';
+      btn.disabled    = false;
     }
   }
 
-  // ── Excluir conta ──────────────────────────────────────────────
   const deleteSteps = [
-    {
-      emoji: '😱',
-      title: 'Excluir conta?',
-      msg:   'Tem certeza que quer apagar tudo? Suas refeições, histórico e dados serão perdidos para sempre!',
-      cancelTxt:  'Não, me arrependi',
-      confirmTxt: 'Sim, quero excluir',
-    },
-    {
-      emoji: '🥺',
-      title: 'Peraí... você tem certeza mesmo?',
-      msg:   'Olha, você mal começou! Tá desistindo já? Seus dados vão sumir que nem lágrima no chuveiro...',
-      cancelTxt:  'Tá bom, vou ficar',
-      confirmTxt: 'Pode excluir sim',
-    },
-    {
-      emoji: '😤',
-      title: 'Tá bem, mas antes me responde...',
-      msg:   'Você passou horas cadastrando suas refeições e agora vai jogar fora assim? Pensa bem antes de apertar esse botão...',
-      cancelTxt:  'Ok ok, vou ficar 😅',
-      confirmTxt: 'Excluir de uma vez',
-    },
-    {
-      emoji: '🤡',
-      title: 'Última chance, campeão!',
-      msg:   'Tudo bem, eu aceito. Mas saiba que seu histórico calórico vai sentir sua falta. As calorias vão chorar.',
-      cancelTxt:  '😭 Não consigo fazer isso',
-      confirmTxt: '💀 Excluir agora',
-    },
+    { emoji:'😱', title:'Excluir conta?',
+      msg:'Tem certeza que quer apagar tudo? Suas refeições, histórico e dados serão perdidos para sempre!',
+      cancelTxt:'Não, me arrependi', confirmTxt:'Sim, quero excluir' },
+    { emoji:'🥺', title:'Peraí... você tem certeza mesmo?',
+      msg:'Olha, você mal começou! Tá desistindo já? Seus dados vão sumir que nem lágrima no chuveiro...',
+      cancelTxt:'Tá bom, vou ficar', confirmTxt:'Pode excluir sim' },
+    { emoji:'😤', title:'Tá bem, mas antes me responde...',
+      msg:'Você passou horas cadastrando suas refeições e agora vai jogar fora assim? Pensa bem antes de apertar esse botão...',
+      cancelTxt:'Ok ok, vou ficar 😅', confirmTxt:'Excluir de uma vez' },
+    { emoji:'🤡', title:'Última chance, campeão!',
+      msg:'Tudo bem, eu aceito. Mas saiba que seu histórico calórico vai sentir sua falta. As calorias vão chorar.',
+      cancelTxt:'😭 Não consigo fazer isso', confirmTxt:'💀 Excluir agora' },
   ];
 
   let deleteStep = 0;
@@ -333,21 +313,17 @@
   }
 
   function renderDeleteStep() {
-    const s = deleteSteps[deleteStep];
+    const s          = deleteSteps[deleteStep];
+    const isLastStep = deleteStep === deleteSteps.length - 1;
     v('del-emoji').textContent = s.emoji;
     v('del-title').textContent = s.title;
     v('del-msg').textContent   = s.msg;
-
-    // Na última etapa o botão vermelho deleta de verdade
-    const isLastStep = deleteStep === deleteSteps.length - 1;
-
     v('del-actions').innerHTML = `
       <button class="delete-btn-cancel" onclick="closeDeleteModal()">${s.cancelTxt}</button>
       <button class="delete-btn" onclick="${isLastStep ? 'confirmDelete()' : 'nextStep()'}">${s.confirmTxt}</button>
     `;
   }
 
-  // Avança para o próximo pop-up de convencimento
   function nextStep() {
     deleteStep++;
     renderDeleteStep();
@@ -369,7 +345,6 @@
     }
   }
 
-  // Fecha o modal clicando fora
   v('delete-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeDeleteModal();
   });

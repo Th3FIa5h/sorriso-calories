@@ -3,18 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <script>
-  // Aplica o tipo selecionado ANTES da página renderizar (zero delay)
-  document.addEventListener('DOMContentLoaded', () => {
-    const tipo = new URLSearchParams(window.location.search).get('tipo');
-    if (tipo) {
-      document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
-      const el = document.querySelector(`.mo[data-t="${tipo}"]`);
-      if (el) el.classList.add('on');
-    }
-  });
-</script>
-<script>
-  // Aplica o tema salvo antes de renderizar a página (evita flash)
   const _t = localStorage.getItem('sc_tema');
   if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 </script>
@@ -23,22 +11,17 @@
 <link rel="stylesheet" href="../css/shared.css">
 <style>
   .al  { display:grid; grid-template-columns:1fr 420px; gap:28px }
-  /* Opções de tipo de refeição */
   .mg  { display:grid; grid-template-columns:repeat(4,1fr); gap:12px }
-  /* Esconde todas as opções de tipo inicialmente para evitar flash */
   .mo  { border:2px solid var(--gray200); border-radius:var(--rs); padding:16px 12px;
-       	text-align:center; cursor:pointer; transition:all .18s }
-  /* Esconde todas as opções de tipo inicialmente para evitar flash */
-  .mo { display:flex; flex-direction:column; align-items:center }
-  .mo:hover { border-color:var(--g300); background:var(--g50) }
-  .mo.on    { border-color:var(--g700); background:var(--g50) }
+         text-align:center; cursor:pointer; transition:all .18s;
+         display:flex; flex-direction:column; align-items:center }
+  .mo:hover   { border-color:var(--g300); background:var(--g50) }
+  .mo.on      { border-color:var(--g700); background:var(--g50) }
   .mo.on .ml2 { color:var(--g700) }
   .ml2 { font-size:13px; font-weight:600; color:var(--gray800) }
-  /* Campo de busca com ícone */
   .sw  { position:relative }
   .sw svg { position:absolute; left:16px; top:50%; transform:translateY(-50%) }
   .spl { padding-left:46px !important }
-  /* Resultados da busca */
   .fri { display:flex; align-items:center; gap:14px; padding:11px 14px;
          border-radius:var(--rs); border:1.5px solid var(--gray200);
          cursor:pointer; transition:all .18s; margin-bottom:6px }
@@ -47,7 +30,6 @@
           border:none; padding:6px 14px; border-radius:99px; cursor:pointer;
           transition:all .18s; white-space:nowrap }
   .fadd:hover { background:var(--g700); color:var(--white) }
-  /* Item adicionado à refeição */
   .ai  { display:flex; align-items:center; gap:12px; padding:11px 14px;
          background:var(--gray100); border-radius:var(--rs); margin-bottom:6px }
   .arm { width:24px; height:24px; border-radius:50%; border:none; background:var(--gray200);
@@ -55,10 +37,13 @@
          display:flex; align-items:center; justify-content:center;
          transition:all .18s; margin-left:4px }
   .arm:hover { background:#fde8e8; color:#c0392b }
-  /* Preview de kcal no painel lateral */
   .pvb { background:var(--g50); border-radius:var(--rs); padding:20px; text-align:center }
   .pvm { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px }
   .pmi { background:var(--white); border-radius:var(--rs); padding:12px; text-align:center }
+  /* Banner que aparece quando está editando refeição existente */
+  .edit-banner { background:var(--g50); border:1.5px solid var(--g300);
+                 border-radius:var(--rs); padding:12px 16px; margin-bottom:4px;
+                 font-size:13px; color:var(--g700); font-weight:500 }
 </style>
 </head>
 <body>
@@ -66,19 +51,26 @@
   <div id="sidebar-root"></div>
   <main class="main">
     <div class="ph">
-      <div><h2>Adicionar Refeição</h2><p>Registre o que você comeu</p></div>
+      <div>
+        <h2 id="page-title">Adicionar Refeição</h2>
+        <p id="page-sub">Registre o que você comeu</p>
+      </div>
       <a href="refeicoes.html" class="btn-g">← Voltar</a>
     </div>
     <div class="ca">
       <div class="al">
-
-        <!-- Coluna principal: formulário -->
         <div style="display:flex;flex-direction:column;gap:22px">
 
-          <!-- Tipo de refeição e horário -->
+          <!-- Banner de modo edição (aparece só quando editando refeição existente) -->
+          <div class="edit-banner" id="edit-banner" style="display:none">
+            ✏️ Você está adicionando alimentos a uma refeição existente.
+            Os novos itens serão incluídos nessa refeição.
+          </div>
+
+          <!-- Tipo de refeição — desabilitado no modo edição -->
           <div class="card">
             <div class="ct" style="margin-bottom:14px">Tipo de Refeição</div>
-            <div class="mg">
+            <div class="mg" id="tipo-grid">
               <div class="mo on" data-t="cafe" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">☀️</div><div class="ml2">Café da Manhã</div></div>
               <div class="mo" data-t="almoco" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">🍽️</div><div class="ml2">Almoço</div></div>
               <div class="mo" data-t="lanche_tarde" onclick="pickTipo(this)"><div style="font-size:22px;margin-bottom:6px">🍎</div><div class="ml2">Lanche</div></div>
@@ -90,7 +82,6 @@
             </div>
           </div>
 
-          <!-- Busca de alimentos com debounce -->
           <div class="card">
             <div class="ct" style="margin-bottom:14px">Buscar Alimentos</div>
             <div class="sw">
@@ -102,7 +93,6 @@
             <div id="fresults" style="margin-top:10px"></div>
           </div>
 
-          <!-- Lista de alimentos adicionados à refeição -->
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
               <div class="ct">Alimentos desta Refeição</div>
@@ -115,14 +105,14 @@
             </div>
           </div>
 
-          <div class="card">
+          <!-- Observações — ocultas no modo edição (não altera obs da refeição existente) -->
+          <div class="card" id="obs-card">
             <div class="ct" style="margin-bottom:10px">Observações</div>
             <textarea class="inp" id="mobs" rows="3"
               placeholder="Ex: refeição pré-treino, restaurante X..." style="resize:vertical"></textarea>
           </div>
         </div>
 
-        <!-- Coluna lateral: preview e saldo do dia -->
         <div style="position:sticky;top:24px;align-self:flex-start;display:flex;flex-direction:column;gap:20px">
           <div class="card">
             <div class="ct" style="margin-bottom:14px">Resumo da Refeição</div>
@@ -137,7 +127,6 @@
             </div>
           </div>
 
-          <!-- Saldo calórico do dia incluindo esta refeição -->
           <div class="card">
             <div class="ct" style="margin-bottom:12px">Saldo do Dia</div>
             <div class="row"><span style="font-size:13px;color:var(--gray600)">Consumido hoje</span><span style="font-size:13px;font-weight:600" id="dy-c">— kcal</span></div>
@@ -152,7 +141,7 @@
           </div>
 
           <button class="btn" style="width:100%;justify-content:center;padding:15px;font-size:15px"
-                  id="sbtn" onclick="save()">✅ Salvar Refeição</button>
+                  id="sbtn" onclick="save()">✅ Salvar</button>
           <a href="refeicoes.html" class="btn-o" style="width:100%;justify-content:center">Cancelar</a>
         </div>
       </div>
@@ -162,43 +151,80 @@
 
 <script src="../js/api.js"></script>
 <script>
-  let added   = [];   // alimentos adicionados à refeição
-  let dayKcal = 0;    // kcal já consumidas hoje (sem esta refeição)
-  let dayMeta = 1800; // meta calórica do usuário
-  let timer;          // timer para debounce da busca
+  let added    = [];   // itens novos que o usuário está adicionando agora
+  let existing = [];   // itens que já existem na refeição (modo edição)
+  let dayKcal  = 0;
+  let dayMeta  = 1800;
+  let timer;
 
-    async function init() {
-        const now = new Date();
-        document.getElementById('mdata').value = now.toISOString().split('T')[0];
-        document.getElementById('mhora').value = now.toTimeString().slice(0, 5);
+  const params         = new URLSearchParams(window.location.search);
+  const refIdExistente = params.get('ref_id') ? parseInt(params.get('ref_id')) : null;
+  const tipoParam      = params.get('tipo');
 
-        // Aplica o tipo IMEDIATAMENTE antes de qualquer outra coisa
-        const params = new URLSearchParams(window.location.search);
-        const tipo   = params.get('tipo');
-        if (tipo) {
-            // Remove 'on' de todos e marca o correto
-            document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
-            const el = document.querySelector(`.mo[data-t="${tipo}"]`);
-            if (el) el.classList.add('on');
-        }
+  async function init() {
+    const now = new Date();
+    document.getElementById('mdata').value = now.toISOString().split('T')[0];
+    document.getElementById('mhora').value = now.toTimeString().slice(0, 5);
 
-        try {
-            const d = await GET('dashboard', { usuario_id: UID.get() });
-            dayKcal = Math.round(d.hoje.kcal);
-            dayMeta = d.hoje.meta_kcal;
-            document.getElementById('dy-c').textContent    = dayKcal.toLocaleString('pt-BR') + ' kcal';
-            document.getElementById('dy-meta').textContent = 'Meta: ' + dayMeta.toLocaleString('pt-BR');
-            updateBar();
-        } catch(e) {}
+    if (refIdExistente) {
+      // Modo edição: carrega os dados da refeição existente
+      document.getElementById('page-title').textContent   = 'Editar Refeição';
+      document.getElementById('page-sub').textContent     = 'Edite itens e observações';
+      document.getElementById('edit-banner').style.display = '';
+      document.getElementById('obs-card').style.display   = ''; // mostra obs para edição
+
+      // Trava os botões de tipo
+      document.querySelectorAll('.mo').forEach(o => {
+        o.style.cursor = 'default';
+        o.onclick      = null;
+        o.style.opacity = '0.6';
+      });
+
+      try {
+        // Carrega os dados da refeição existente
+        const ref = await GET(`refeicoes/${refIdExistente}`);
+
+        // Preenche a observação existente
+        if (ref.obs) document.getElementById('mobs').value = ref.obs;
+
+        // Preenche data e hora da refeição
+        if (ref.data_ref) document.getElementById('mdata').value = ref.data_ref;
+        if (ref.hora_ref) document.getElementById('mhora').value = ref.hora_ref.slice(0,5);
+
+        // Guarda os itens já existentes para exibir no painel
+        existing = ref.itens || [];
+
+      } catch(e) {
+        toast('Erro ao carregar refeição: ' + e.message, 'error');
+      }
     }
 
-  // Seleciona o tipo de refeição
+    // Seleciona o tipo correto
+    if (tipoParam) {
+      document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
+      const el = document.querySelector(`.mo[data-t="${tipoParam}"]`);
+      if (el) el.classList.add('on');
+    }
+
+    try {
+      const d = await GET('dashboard', { usuario_id: UID.get() });
+      dayKcal = Math.round(d.hoje.kcal);
+      dayMeta = d.hoje.meta_kcal;
+      document.getElementById('dy-c').textContent    = dayKcal.toLocaleString('pt-BR') + ' kcal';
+      document.getElementById('dy-meta').textContent = 'Meta: ' + dayMeta.toLocaleString('pt-BR');
+      updateBar();
+    } catch(e) {}
+
+    // Renderiza os itens existentes já na tela
+    render();
+  }
+
   function pickTipo(el) {
+    if (refIdExistente) return;
     document.querySelectorAll('.mo').forEach(o => o.classList.remove('on'));
     el.classList.add('on');
   }
 
-  // Busca alimentos com debounce de 300ms
   document.getElementById('fsearch').addEventListener('input', function() {
     clearTimeout(timer);
     if (this.value.length < 2) { document.getElementById('fresults').innerHTML = ''; return; }
@@ -225,7 +251,6 @@
          </p>`;
   }
 
-  // Solicita a quantidade e adiciona o alimento à lista
   function addFood(f) {
     const qty = parseFloat(prompt(`Quantidade de "${f.nome}" em gramas (padrão: ${f.porcao_g}g):`, f.porcao_g));
     if (isNaN(qty) || qty <= 0) return;
@@ -245,35 +270,85 @@
 
   function rmAdded(i) { added.splice(i, 1); render(); }
 
-  // Renderiza a lista de alimentos e atualiza o preview
+  // Remove item existente da refeição diretamente na API
+  async function rmExisting(itemId, idx) {
+    if (!confirm('Remover este alimento da refeição?')) return;
+    try {
+      await DEL(`refeicoes/${refIdExistente}/itens/${itemId}`);
+      existing.splice(idx, 1);
+      render();
+      toast('Item removido ✅');
+    } catch(e) {
+      toast('Erro ao remover: ' + e.message, 'error');
+    }
+  }
+
   function render() {
-    document.getElementById('icount').textContent = added.length + ' itens';
-    document.getElementById('ilist').innerHTML = added.length
-      ? added.map((f, i) => `
-          <div class="ai">
-            <span style="font-size:20px">${f.emoji}</span>
-            <span style="flex:1;font-size:14px;font-weight:500">${f.nome}</span>
-            <span style="font-size:13px;color:var(--gray400)">${f.quantidade_g}g</span>
-            <span style="font-size:14px;font-weight:600;color:var(--g700);margin:0 8px">${f.kcal} kcal</span>
-            <button class="arm" onclick="rmAdded(${i})">×</button>
-          </div>`).join('')
-      : '<p style="font-size:13px;color:var(--gray400);text-align:center;padding:16px 0">Nenhum alimento. Use a busca ☝️</p>';
+    // Conta total de itens (existentes + novos)
+    const totalItens = existing.length + added.length;
+    document.getElementById('icount').textContent = totalItens + ' itens';
 
-    // Calcula totais da refeição
-    const tk = added.reduce((s, f) => s + f.kcal,       0);
-    const tp = added.reduce((s, f) => s + f.proteina_g, 0).toFixed(1);
-    const tc = added.reduce((s, f) => s + f.carb_g,     0).toFixed(1);
-    const tf = added.reduce((s, f) => s + f.gordura_g,  0).toFixed(1);
+    let html = '';
 
-    document.getElementById('pv-k').textContent = tk;
+    // Exibe itens já existentes na refeição
+    if (existing.length > 0) {
+      html += `<div style="font-size:11px;font-weight:600;color:var(--gray400);
+                           text-transform:uppercase;letter-spacing:.06em;
+                           margin-bottom:8px;padding:0 2px">
+                 Já na refeição
+               </div>`;
+      html += existing.map((f, i) => `
+        <div class="ai" style="opacity:.85">
+          <span style="font-size:20px">${f.emoji || '🍽️'}</span>
+          <span style="flex:1;font-size:14px;font-weight:500">${f.nome}</span>
+          <span style="font-size:13px;color:var(--gray400)">${f.quantidade_g}g</span>
+          <span style="font-size:14px;font-weight:600;color:var(--g700);margin:0 8px">
+            ${Math.round(f.kcal)} kcal
+          </span>
+          <button class="arm" onclick="rmExisting(${f.id}, ${i})" title="Remover">×</button>
+        </div>`).join('');
+    }
+
+    // Exibe itens novos sendo adicionados agora
+    if (added.length > 0) {
+      html += `<div style="font-size:11px;font-weight:600;color:var(--g700);
+                           text-transform:uppercase;letter-spacing:.06em;
+                           margin:12px 0 8px;padding:0 2px">
+                 Novos itens
+               </div>`;
+      html += added.map((f, i) => `
+        <div class="ai">
+          <span style="font-size:20px">${f.emoji}</span>
+          <span style="flex:1;font-size:14px;font-weight:500">${f.nome}</span>
+          <span style="font-size:13px;color:var(--gray400)">${f.quantidade_g}g</span>
+          <span style="font-size:14px;font-weight:600;color:var(--g700);margin:0 8px">
+            ${f.kcal} kcal
+          </span>
+          <button class="arm" onclick="rmAdded(${i})">×</button>
+        </div>`).join('');
+    }
+
+    if (!html) {
+      html = '<p style="font-size:13px;color:var(--gray400);text-align:center;padding:16px 0">Nenhum alimento. Use a busca ☝️</p>';
+    }
+
+    document.getElementById('ilist').innerHTML = html;
+
+    // Calcula totais somando existentes + novos
+    const allItems = [...existing, ...added];
+    const tk = allItems.reduce((s, f) => s + parseFloat(f.kcal),       0);
+    const tp = allItems.reduce((s, f) => s + parseFloat(f.proteina_g), 0).toFixed(1);
+    const tc = allItems.reduce((s, f) => s + parseFloat(f.carb_g),     0).toFixed(1);
+    const tf = allItems.reduce((s, f) => s + parseFloat(f.gordura_g),  0).toFixed(1);
+
+    document.getElementById('pv-k').textContent = Math.round(tk);
     document.getElementById('pv-p').textContent = tp + 'g';
     document.getElementById('pv-c').textContent = tc + 'g';
     document.getElementById('pv-f').textContent = tf + 'g';
-    document.getElementById('dy-t').textContent = '+' + tk + ' kcal';
-    updateBar(tk);
+    document.getElementById('dy-t').textContent = '+' + Math.round(tk) + ' kcal';
+    updateBar(Math.round(tk));
   }
 
-  // Atualiza a barra de progresso do dia
   function updateBar(extra = 0) {
     const total = dayKcal + extra;
     const pct   = dayMeta > 0 ? Math.min(100, Math.round(total / dayMeta * 100)) : 0;
@@ -282,25 +357,44 @@
     document.getElementById('dy-c').textContent    = total.toLocaleString('pt-BR') + ' kcal';
   }
 
-  // Salva a refeição no banco via API
   async function save() {
-    if (!added.length) { toast('Adicione ao menos um alimento', 'error'); return; }
+    if (!added.length && !refIdExistente) {
+      toast('Adicione ao menos um alimento', 'error'); return;
+    }
+
     const btn = document.getElementById('sbtn');
     btn.textContent = 'Salvando...'; btn.disabled = true;
+
     try {
-      await POST('refeicoes', {
-        usuario_id: UID.get(),
-        tipo:       document.querySelector('.mo.on').dataset.t,
-        data_ref:   document.getElementById('mdata').value,
-        hora_ref:   document.getElementById('mhora').value + ':00',
-        obs:        document.getElementById('mobs').value,
-        itens:      added.map(f => ({ alimento_id: f.alimento_id, quantidade_g: f.quantidade_g })),
-      });
-      toast('Refeição salva ✅');
+      if (refIdExistente) {
+        // Salva observações atualizadas da refeição existente
+        const novaObs = document.getElementById('mobs').value;
+        await PUT(`refeicoes/${refIdExistente}`, { obs: novaObs });
+
+        // Adiciona os novos itens um por um
+        for (const f of added) {
+          await POST(`refeicoes/${refIdExistente}/itens`, {
+            alimento_id:  f.alimento_id,
+            quantidade_g: f.quantidade_g,
+          });
+        }
+      } else {
+        // Cria nova refeição
+        await POST('refeicoes', {
+          usuario_id: UID.get(),
+          tipo:       document.querySelector('.mo.on').dataset.t,
+          data_ref:   document.getElementById('mdata').value,
+          hora_ref:   document.getElementById('mhora').value + ':00',
+          obs:        document.getElementById('mobs').value,
+          itens:      added.map(f => ({ alimento_id: f.alimento_id, quantidade_g: f.quantidade_g })),
+        });
+      }
+
+      toast('Salvo ✅');
       setTimeout(() => location.href = 'refeicoes.html', 900);
     } catch(e) {
       toast(e.message, 'error');
-      btn.textContent = '✅ Salvar Refeição'; btn.disabled = false;
+      btn.textContent = '✅ Salvar'; btn.disabled = false;
     }
   }
 
