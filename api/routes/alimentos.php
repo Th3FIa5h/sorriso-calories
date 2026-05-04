@@ -103,6 +103,19 @@ function getAlimento(PDO $db, int $id): void {
 function createAlimento(PDO $db, array $body): void {
     requireFields($body, ['nome', 'kcal']);
 
+    // Valida valores numéricos não-negativos
+    $numericos = ['kcal','proteina_g','carb_g','gordura_g','gord_sat_g','fibra_g','acucar_g','sodio_mg'];
+    foreach ($numericos as $campo) {
+        if (isset($body[$campo]) && (float)$body[$campo] < 0) {
+            jsonError("O campo $campo não pode ser negativo.", 422);
+        }
+    }
+
+    // Valida porção
+    if (isset($body['porcao_g']) && (float)$body['porcao_g'] <= 0) {
+        jsonError('A porção padrão deve ser maior que zero.', 422);
+    }
+
     $stmt = $db->prepare("
         INSERT INTO alimentos
           (nome, descricao, marca, categoria, emoji, porcao_g, unidade,
@@ -147,6 +160,20 @@ function updateAlimento(PDO $db, int $id, array $body): void {
         'fibra_g', 'acucar_g', 'sodio_mg', 'calcio_mg', 'ferro_mg', 'vitamina_c_mg'
     ];
     $sets   = [];
+
+    // Valida valores numéricos não-negativos
+    $numericos = ['kcal','proteina_g','carb_g','gordura_g','gord_sat_g','fibra_g','acucar_g','sodio_mg'];
+    foreach ($numericos as $campo) {
+        if (isset($body[$campo]) && (float)$body[$campo] < 0) {
+            jsonError("O campo $campo não pode ser negativo.", 422);
+        }
+    }
+
+    // Valida porção
+    if (isset($body['porcao_g']) && (float)$body['porcao_g'] <= 0) {
+        jsonError('A porção padrão deve ser maior que zero.', 422);
+    }
+
     $params = [];
 
     // Adiciona ao UPDATE somente os campos que foram enviados

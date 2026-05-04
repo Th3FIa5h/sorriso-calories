@@ -96,10 +96,18 @@ function listRefeicoes(PDO $db, int $uidAutenticado): void {
  * Retorna uma refeição completa com todos os seus itens.
  */
 function getRefeicao(PDO $db, int $id): void {
+    $user = autenticar();
+
     $stmt = $db->prepare("SELECT * FROM refeicoes WHERE id=?");
     $stmt->execute([$id]);
     $r = $stmt->fetch();
+
     if (!$r) jsonError('Refeição não encontrada', 404);
+
+    // Garante que só o dono da refeição pode acessá-la
+    if ((int)$r['usuario_id'] !== (int)$user['id']) {
+        jsonError('Acesso negado', 403);
+    }
 
     $si = $db->prepare("
         SELECT ri.*, a.nome, a.emoji, a.categoria

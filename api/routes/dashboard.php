@@ -58,21 +58,24 @@ function routeDashboard(): void {
     $tStmt->execute([$uid, $today]);
     $totais = $tStmt->fetch();
 
-    // Saldo calórico restante do dia
-    // Usado para sugerir alimentos que caibam no saldo disponível
-    $saldo = max(50, ($user['meta_kcal'] ?? 1800) - $totais['kcal']);
+    // Saldo real — pode ser negativo se ultrapassou a meta
+$saldo = ($user['meta_kcal'] ?? 1800) - $totais['kcal'];
 
-    // Sugestões: alimentos aleatórios com kcal entre 12% e 45% do saldo
+// Só busca sugestões se ainda tem saldo disponível (mais de 50 kcal restantes)
+$sugestoes = [];
+if ($saldo > 50) {
     $sStmt = $db->prepare("
         SELECT id, nome, emoji, kcal, proteina_g, carb_g, gordura_g, porcao_g
         FROM alimentos WHERE ativo=1 AND kcal BETWEEN ? AND ?
         ORDER BY RAND() LIMIT 4
     ");
-    $sStmt->execute([max(50, $saldo * 0.12), max(80, $saldo * 0.45)]);
+    $sStmt->execute([$saldo * 0.12, $saldo * 0.45]);
+    $sugestoes = $sStmt->fetchAll();
+}
 
     // Streak: dias consecutivos com pelo menos uma refeição registrada
     $dStmt = $db->prepare(
-        "SELECT data FROM historico_diario WHERE usuario_id=? ORDER BY data DESC LIMIT 30"
+        "SELECT data FROM historico_diario WHERE usuario_id=? ORDER BY data DESC LIMIT 365"
     );
     $dStmt->execute([$uid]);
     $datas  = array_column($dStmt->fetchAll(), 'data');
@@ -98,7 +101,7 @@ function routeDashboard(): void {
             'saldo_kcal' => round($meta - $totais['kcal'], 1),
         ],
         'refeicoes'   => $refeicoes,
-        'sugestoes'   => $sStmt->fetchAll(),
+        'sugestoes'   => $sugestoes,
         'streak_dias' => $streak,
     ]);
 }

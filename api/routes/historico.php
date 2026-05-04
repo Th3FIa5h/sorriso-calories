@@ -45,11 +45,15 @@ function routeHistorico(): void {
     $stmt->execute([$uid, $inicio]);
     $rows = $stmt->fetchAll();
 
-    // Calcula streak a partir das datas mais recentes
-    $datas  = array_column($rows, 'data');
-    rsort($datas); // ordena do mais recente para o mais antigo
+    // Busca os últimos 365 dias especificamente para calcular o streak
+    // independente do período solicitado pelo usuário
+    $streakStmt = $db->prepare(
+        "SELECT data FROM historico_diario WHERE usuario_id=? ORDER BY data DESC LIMIT 365"
+    );
+    $streakStmt->execute([$uid]);
+    $datasStreak = array_column($streakStmt->fetchAll(), 'data');
     $streak = 0;
-    foreach ($datas as $i => $d) {
+    foreach ($datasStreak as $i => $d) {
         if ($d === date('Y-m-d', strtotime("-{$i} days"))) $streak++;
         else break;
     }

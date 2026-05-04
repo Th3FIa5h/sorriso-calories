@@ -38,9 +38,10 @@ function routeUsuarios(string $method, ?int $id, array $body): void {
  * Lista todos os usuários com dados resumidos.
  */
 function listUsuarios(PDO $db): void {
-    jsonResponse($db->query(
-        "SELECT id, nome, email, objetivo, meta_kcal, criado_em FROM usuarios ORDER BY id"
-    )->fetchAll());
+    // Retorna apenas os dados do usuário autenticado
+    // Nunca expõe lista de todos os usuários
+    $user = autenticar();
+    getUsuario($db, $user['id']);
 }
 
 /**

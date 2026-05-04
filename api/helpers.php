@@ -77,14 +77,20 @@ function requireFields(array $body, array $fields): void {
  * @return array           Array com kcal, proteina_g, carb_g e gordura_g calculados
  */
 function calcMacros(array $alimento, float $qtdG): array {
-    $base = max(1, (float)$alimento['porcao_g']); // porção de referência (nunca zero)
-    $m    = $qtdG / $base;                         // fator de proporção
+    // Rejeita quantidade negativa ou zero
+    if ($qtdG <= 0) jsonError('A quantidade deve ser maior que zero.', 422);
+
+    // Rejeita porção zero para evitar divisão por zero e inflação de macros
+    $base = (float)$alimento['porcao_g'];
+    if ($base <= 0) jsonError('Porção do alimento inválida (zero ou negativa).', 422);
+
+    $m = $qtdG / $base;
 
     return [
-        'kcal'       => round($alimento['kcal']       * $m, 2),
-        'proteina_g' => round($alimento['proteina_g'] * $m, 2),
-        'carb_g'     => round($alimento['carb_g']     * $m, 2),
-        'gordura_g'  => round($alimento['gordura_g']  * $m, 2),
+        'kcal'       => round(max(0, $alimento['kcal'])       * $m, 2),
+        'proteina_g' => round(max(0, $alimento['proteina_g']) * $m, 2),
+        'carb_g'     => round(max(0, $alimento['carb_g'])     * $m, 2),
+        'gordura_g'  => round(max(0, $alimento['gordura_g'])  * $m, 2),
     ];
 }
 
