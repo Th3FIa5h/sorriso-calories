@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <script>
-  // Aplica o tema salvo antes de renderizar a página (evita flash)
   const _t = localStorage.getItem('sc_tema');
   if (_t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 </script>
@@ -23,12 +22,19 @@
          background:var(--white); font-size:13px; cursor:pointer; transition:all .18s; color:var(--gray600) }
   .pb:hover { border-color:var(--g300); color:var(--g700) }
   .pb.on    { background:var(--g700); border-color:var(--g700); color:var(--white) }
-  /* Botões de editar e excluir na tabela */
   .act-btn  { padding:5px 12px; border-radius:var(--rs); border:none; font-size:12px; font-weight:600; cursor:pointer; transition:all .18s }
   .act-edit { background:var(--g100); color:var(--g700) }
   .act-edit:hover { background:var(--g700); color:var(--white) }
   .act-del  { background:#fde8e8; color:#c0392b; margin-left:4px }
   .act-del:hover { background:#c0392b; color:var(--white) }
+
+  /* Modal de escolha de data de propagação */
+  .prop-option { border:2px solid var(--gray200); border-radius:var(--rs); padding:16px 18px;
+                 cursor:pointer; transition:all .18s; margin-bottom:10px }
+  .prop-option:hover { border-color:var(--g300); background:var(--g50) }
+  .prop-option.on   { border-color:var(--g700); background:var(--g50) }
+  .prop-option h4   { font-size:14px; font-weight:600; color:var(--gray800); margin-bottom:4px }
+  .prop-option p    { font-size:12px; color:var(--gray400); margin:0 }
 </style>
 </head>
 <body>
@@ -41,8 +47,6 @@
     </div>
     <div class="ca">
       <div class="fl">
-
-        <!-- Tabela de alimentos -->
         <div style="display:flex;flex-direction:column;gap:20px">
           <div class="card" style="padding:20px 24px">
             <div style="display:flex;gap:12px">
@@ -83,7 +87,7 @@
           </div>
         </div>
 
-        <!-- Painel lateral: adicionar à refeição -->
+        <!-- Painel lateral -->
         <div>
           <div class="card" id="side" style="display:flex;flex-direction:column;gap:16px">
             <div class="ct">Adicionar à Refeição</div>
@@ -136,7 +140,55 @@
     </div>
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:8px">
       <button class="btn-g" onclick="closeEdit()">Cancelar</button>
-      <button class="btn" id="ed-save-btn" onclick="saveEdit()">💾 Salvar Alterações</button>
+      <button class="btn" id="ed-save-btn" onclick="openPropModal()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de propagação: escolhe a partir de quando aplicar nos itens de refeição -->
+<div class="overlay" id="prop-modal" style="display:none">
+  <div class="modal" style="width:520px">
+    <h3 style="font-family:var(--fd);font-size:20px;font-weight:400;margin-bottom:8px">
+      Atualizar refeições existentes?
+    </h3>
+    <p style="font-size:14px;color:var(--gray600);margin-bottom:20px">
+      Os novos valores nutricionais podem ser aplicados nas refeições
+      em que você já usou este alimento. Escolha a partir de quando:
+    </p>
+
+    <!-- Opção 1: não atualizar -->
+    <div class="prop-option on" data-v="none" onclick="pickProp(this)">
+      <h4>Não atualizar refeições anteriores</h4>
+      <p>Apenas os registros futuros usarão os novos valores.</p>
+    </div>
+
+    <!-- Opção 2: atualizar da última semana -->
+    <div class="prop-option" data-v="week" onclick="pickProp(this)">
+      <h4>📅 Última semana</h4>
+      <p>Recalcula refeições dos últimos 7 dias.</p>
+    </div>
+
+    <!-- Opção 3: atualizar desde o cadastro -->
+    <div class="prop-option" data-v="all" onclick="pickProp(this)">
+      <h4>📋 Desde sempre</h4>
+      <p>Recalcula todas as refeições com este alimento desde o início.</p>
+    </div>
+
+    <!-- Opção 4: escolher data personalizada -->
+    <div class="prop-option" data-v="custom" onclick="pickProp(this)">
+      <h4>🗓️ A partir de uma data específica</h4>
+      <p>Você escolhe a data de início da atualização.</p>
+    </div>
+
+    <!-- Campo de data customizada (aparece só quando escolhe "custom") -->
+    <div id="custom-date-wrap" style="display:none;margin-top:12px">
+      <label class="lbl">Data de início</label>
+      <input class="inp" id="custom-date" type="date">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+      <button class="btn-g" onclick="closePropModal()">Cancelar</button>
+      <button class="btn" id="prop-save-btn" onclick="saveEdit()">Confirmar e Salvar</button>
     </div>
   </div>
 </div>
@@ -145,10 +197,10 @@
 <script>
   const BC = { 'Proteína':'bb','Carboidrato':'bo','Fruta':'bg','Vegetal':'bg','Laticínio':'bb','Gordura':'bf','Bebida':'bb' };
   let pg = 1, q = '', cat = '', timer2 = null;
-  let selFood = null; // alimento selecionado no painel lateral
-  let editId  = null; // id do alimento sendo editado
+  let selFood  = null;
+  let editId   = null;
+  let propMode = 'none'; // none | week | all | custom
 
-  // Carrega e renderiza a tabela paginada de alimentos
   async function loadFoods() {
     try {
       const d = await GET('alimentos', { q, categoria: cat, page: pg, limit: 15 });
@@ -171,7 +223,6 @@
             </tr>`).join('')
         : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray400)">Nenhum alimento encontrado</td></tr>';
 
-      // Botões de paginação
       const pag = document.getElementById('pag');
       pag.innerHTML = '';
       if (d.totalPages > 1) {
@@ -185,7 +236,6 @@
 
   function goPg(p) { pg = p; loadFoods(); }
 
-  // Busca com debounce: espera 400ms após parar de digitar
   document.getElementById('sq').addEventListener('input', function() {
     clearTimeout(timer2); q = this.value;
     timer2 = setTimeout(() => { pg = 1; loadFoods(); }, 400);
@@ -194,7 +244,6 @@
     cat = this.value; pg = 1; loadFoods();
   });
 
-  // Seleciona alimento para adicionar à refeição via painel lateral
   function pickFood(f) {
     selFood = f;
     document.getElementById('side').innerHTML = `
@@ -231,7 +280,6 @@
       <button class="btn" style="width:100%;justify-content:center;padding:13px" onclick="addToMeal()">Adicionar à Refeição →</button>`;
   }
 
-  // Recalcula os valores quando a quantidade muda
   function updSide() {
     if (!selFood) return;
     const qty = parseFloat(document.getElementById('sp-q').value) || 0;
@@ -243,7 +291,6 @@
     document.getElementById('sp-tot').textContent = Math.round(selFood.kcal * m) + ' kcal';
   }
 
-  // Adiciona o alimento selecionado à refeição do dia
   async function addToMeal() {
     const qty   = parseFloat(document.getElementById('sp-q').value);
     const tipo  = document.getElementById('sp-r').value;
@@ -261,7 +308,6 @@
     } catch(e) { toast(e.message, 'error'); }
   }
 
-  // Abre o modal de edição preenchido com os dados do alimento
   function openEdit(f) {
     editId = f.id;
     document.getElementById('ed-nome').value    = f.nome       || '';
@@ -275,6 +321,10 @@
     document.getElementById('ed-fat').value     = f.gordura_g  || 0;
     document.getElementById('ed-fibra').value   = f.fibra_g    || 0;
     document.getElementById('ed-sodio').value   = f.sodio_mg   || 0;
+
+    // Define a data de hoje como padrão para a opção custom
+    document.getElementById('custom-date').value = new Date().toISOString().split('T')[0];
+
     document.getElementById('edit-modal').style.display = 'flex';
   }
 
@@ -283,42 +333,155 @@
     editId = null;
   }
 
-  // Salva as alterações do alimento editado
-  async function saveEdit() {
+  // Abre o modal de propagação após editar o alimento
+  function openPropModal() {
     if (!editId) return;
-    const btn = document.getElementById('ed-save-btn');
-    btn.textContent = 'Salvando...'; btn.disabled = true;
-    try {
-      await PUT(`alimentos/${editId}`, {
-        nome:       document.getElementById('ed-nome').value.trim(),
-        categoria:  document.getElementById('ed-cat').value,
-        emoji:      document.getElementById('ed-emoji').value,
-        porcao_g:   parseFloat(document.getElementById('ed-porcao').value) || 100,
-        unidade:    document.getElementById('ed-unidade').value,
-        kcal:       parseFloat(document.getElementById('ed-kcal').value)   || 0,
-        proteina_g: parseFloat(document.getElementById('ed-prot').value)   || 0,
-        carb_g:     parseFloat(document.getElementById('ed-carb').value)   || 0,
-        gordura_g:  parseFloat(document.getElementById('ed-fat').value)    || 0,
-        fibra_g:    parseFloat(document.getElementById('ed-fibra').value)  || 0,
-        sodio_mg:   parseFloat(document.getElementById('ed-sodio').value)  || 0,
-      });
-      toast('Alimento atualizado ✅');
-      closeEdit();
-      loadFoods();
-    } catch(e) { toast('Erro: ' + e.message, 'error'); }
-    finally { btn.textContent = '💾 Salvar Alterações'; btn.disabled = false; }
+    // Reseta a seleção para "não atualizar"
+    propMode = 'none';
+    document.querySelectorAll('.prop-option').forEach(o => o.classList.remove('on'));
+    document.querySelector('.prop-option[data-v="none"]').classList.add('on');
+    document.getElementById('custom-date-wrap').style.display = 'none';
+    document.getElementById('prop-modal').style.display = 'flex';
   }
 
-  // Exclui o alimento (soft delete: apenas marca como inativo)
+  function closePropModal() {
+    document.getElementById('prop-modal').style.display = 'none';
+  }
+
+  // Seleciona a opção de propagação e mostra/esconde o campo de data custom
+  function pickProp(el) {
+    document.querySelectorAll('.prop-option').forEach(o => o.classList.remove('on'));
+    el.classList.add('on');
+    propMode = el.dataset.v;
+    document.getElementById('custom-date-wrap').style.display =
+      propMode === 'custom' ? '' : 'none';
+  }
+
+  // Salva a edição do alimento e propaga para refeições se necessário
+  async function saveEdit() {
+    if (!editId) return;
+
+    const btn = document.getElementById('prop-save-btn');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+
+    // Dados novos do alimento
+    const novosDados = {
+      nome:       document.getElementById('ed-nome').value.trim(),
+      categoria:  document.getElementById('ed-cat').value,
+      emoji:      document.getElementById('ed-emoji').value,
+      porcao_g:   parseFloat(document.getElementById('ed-porcao').value) || 100,
+      unidade:    document.getElementById('ed-unidade').value,
+      kcal:       parseFloat(document.getElementById('ed-kcal').value)   || 0,
+      proteina_g: parseFloat(document.getElementById('ed-prot').value)   || 0,
+      carb_g:     parseFloat(document.getElementById('ed-carb').value)   || 0,
+      gordura_g:  parseFloat(document.getElementById('ed-fat').value)    || 0,
+      fibra_g:    parseFloat(document.getElementById('ed-fibra').value)  || 0,
+      sodio_mg:   parseFloat(document.getElementById('ed-sodio').value)  || 0,
+    };
+
+    try {
+      // Salva o alimento
+      await PUT(`alimentos/${editId}`, novosDados);
+
+      // Propaga para refeições se necessário
+      if (propMode !== 'none') {
+        await propagarAlimento(editId, novosDados);
+      }
+
+      toast('Alimento atualizado ✅');
+      closePropModal();
+      closeEdit();
+      loadFoods();
+    } catch(e) {
+      toast('Erro: ' + e.message, 'error');
+    } finally {
+      btn.textContent = 'Confirmar e Salvar'; btn.disabled = false;
+    }
+  }
+
+  /**
+   * Recalcula os macros de todos os itens de refeição que usam este alimento
+   * a partir da data escolhida pelo usuário.
+   */
+  async function propagarAlimento(alimentoId, novosDados) {
+    // Define a data de início conforme a opção escolhida
+    let dataInicio;
+    if (propMode === 'week') {
+      dataInicio = new Date();
+      dataInicio.setDate(dataInicio.getDate() - 7);
+      dataInicio = dataInicio.toISOString().split('T')[0];
+    } else if (propMode === 'all') {
+      dataInicio = '2000-01-01'; // desde sempre
+    } else if (propMode === 'custom') {
+      dataInicio = document.getElementById('custom-date').value;
+      if (!dataInicio) { toast('Selecione uma data.', 'error'); return; }
+    }
+
+    const uid     = UID.get();
+    const hoje    = new Date().toISOString().split('T')[0];
+    let   atualizados = 0;
+
+    try {
+      // Busca todas as refeições do período
+      // Faz isso dia a dia do período escolhido até hoje
+      const inicio  = new Date(dataInicio + 'T12:00:00');
+      const fim     = new Date(hoje + 'T12:00:00');
+      const promises = [];
+
+      // Percorre cada dia do período
+      for (let d = new Date(inicio); d <= fim; d.setDate(d.getDate() + 1)) {
+        const dataStr = d.toISOString().split('T')[0];
+        promises.push(GET('refeicoes', { usuario_id: uid, data: dataStr }));
+      }
+
+      // Aguarda todas as requisições em paralelo
+      const resultados = await Promise.all(promises);
+
+      // Para cada dia, verifica cada refeição e cada item
+      for (const dia of resultados) {
+        for (const ref of dia.refeicoes || []) {
+          for (const item of ref.itens || []) {
+            if (item.alimento_id !== alimentoId) continue;
+
+            // Recalcula os macros com os novos valores
+            const m   = item.quantidade_g / novosDados.porcao_g;
+            const novosItens = {
+              quantidade_g: item.quantidade_g,
+              kcal:         Math.round(novosDados.kcal       * m),
+              proteina_g:   parseFloat((novosDados.proteina_g * m).toFixed(2)),
+              carb_g:       parseFloat((novosDados.carb_g     * m).toFixed(2)),
+              gordura_g:    parseFloat((novosDados.gordura_g  * m).toFixed(2)),
+            };
+
+            // Atualiza o item na API
+            await PUT(`refeicoes/${ref.id}/itens/${item.id}`, novosItens);
+            atualizados++;
+          }
+        }
+      }
+
+      if (atualizados > 0) {
+        toast(`${atualizados} item(ns) de refeição atualizado(s) ✅`);
+      } else {
+        toast('Nenhuma refeição encontrada no período informado.');
+      }
+    } catch(e) {
+      toast('Erro ao propagar: ' + e.message, 'error');
+    }
+  }
+
   async function delFood(id, nome) {
     if (!confirm(`Excluir "${nome}"?\nEle não aparecerá mais na busca.`)) return;
     try { await DEL(`alimentos/${id}`); toast(`"${nome}" removido ✅`); loadFoods(); }
     catch(e) { toast('Erro: ' + e.message, 'error'); }
   }
 
-  // Fecha o modal ao clicar fora dele
   document.getElementById('edit-modal').addEventListener('click', function(e) {
     if (e.target === this) closeEdit();
+  });
+
+  document.getElementById('prop-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePropModal();
   });
 
   scInit('alimentos').then(loadFoods);
